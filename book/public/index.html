@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>易书排版引擎</title>
+    <link rel="stylesheet" href="./css/editor.css" />
+    <style>
+      .elementPanel {
+        fill: white;
+        fill-opacity: 0;
+        cursor: pointer;
+      }
+
+      #dragPanel {
+        stroke: red;
+        fill: white;
+        fill-opacity: 0;
+        cursor: move;
+      }
+
+      .dragPoint {
+        stroke: red;
+        fill: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="menubar">
+        <a class="menu">
+          <div class="menu_title" v-bind:class="{'menu_title_click': menu.showList && menu.currentList==0}" id="logo"
+            v-on:mouseover="showMenuList(0)">
+            <svg viewBox="0 0 27 27" xmlns="http://www.w3.org/2000/svg" width="15" height="15" xmlns:xlink="http://www.w3.org/1999/xlink"
+              class="svg_icon">
+              <svg viewBox="0 0 16 16" version="1.1">
+                <path id="svg_7" d="m-0.0965,16.1043l16.10001,-16.06917l-0.00001,16.06917l-16.1,0z" stroke-linecap="null"
+                  stroke-linejoin="null" stroke-dasharray="null" stroke-width="1.5" fill="#cccccc"></path>
+                <path id="svg_6" d="m0.0035,16.10449l0,-15.99999l16,15.99999l-16,0z" stroke-linecap="null"
+                  stroke-linejoin="null" stroke-dasharray="null" stroke-width="1.5" fill="#666666"></path>
+              </svg>
+            </svg>
+          </div>
+          <!--          <div class="menu_list" v-show="menu.showList && menu.currentList==0">
+            <div class="menu_item">编辑器说明...</div>
+            <div class="separator"></div>
+            <div class="menu_item">快捷键...</div>
+          </div> -->
+        </a>
+        <div class="menu">
+          <div class="menu_title" v-bind:class="{'menu_title_click': menu.showList && menu.currentList==1}" v-on:click="showMenuList(1, true)"
+            v-on:mouseover="showMenuList(1)">文件</div>
+          <div class="menu_list" id="view_menu" v-show="menu.showList && menu.currentList==1">
+            <!-- <div title="保存" class="menu_item" v-on:click="save()">保存</div> -->
+            <div title="新建book" class="menu_item" v-on:click="createBook()">新建Book</div>
+            <div class="separator"></div>
+            <div v-for="(basepage,key,index) in book.basepages" v-bind:title="'打印预览——' + basepage.name" class="menu_item"
+              v-on:click="preview(key)">打印预览——{{basepage.name}}</div>
+            <div class="separator"></div>
+            <div title="手机端显示" class="menu_item" v-on:click="showQrcode()">手机端显示</div>
+          </div>
+        </div>
+        <div class="menu">
+          <div class="menu_title" v-bind:class="{'menu_title_click': menu.showList && menu.currentList==2}" v-on:click="showMenuList(2, true)"
+            v-on:mouseover="showMenuList(2)">视图</div>
+          <div class="menu_list" id="view_menu" v-show="menu.showList && menu.currentList==2">
+            <!-- <div class="menu_item push_button_pressed" id="tool_rulers">显示刻度尺</div>
+            <div class="menu_item" id="tool_wireframe">显示 Wireframe</div> -->
+            <div id="view_grid" title="显示网格" class="menu_item" v-bind:class="{'menu_item_selected':menu.viewGrid}"
+              v-on:click="viewGrid()">显示网格</div>
+            <!-- <div class="menu_item" id="tool_snap">网格对齐</div>
+            <div class="separator"></div>
+            <div class="menu_item" id="tool_source">源代码... <span class="shortcut">Ctrl+U</span></div> -->
+          </div>
+        </div>
+      </div>
+      <div class="sidebar_left">
+        <div v-for="(value,key,index) in config.shapTools" v-bind:id="'tools_' + key" class="tools-button" v-on:click="selectTools(key)">
+          <svg width="27" height="27" v-bind:view-box.camel="key == 'pointer' || key == 'pencil' ? '0 0 24 24': '0 0 27 27'"
+            v-bind:class="{selected: currentSelectedTools == key, not_selected: currentSelectedTools != key}">
+            <g v-if="key==='circle'">
+              <rect fill="#2f2f2c" x="0" y="0" width="27" height="27" />
+              <circle v-bind:fill="currentSelectedTools == 'circle' ? '#00ccff' : '#fff'" cx="13.5" cy="13.5" r="11" />
+            </g>
+            <g v-else-if="key==='select'">
+              <rect fill="#2f2f2c" x="0" y="0" width="27" height="27" />
+              <rect fill="none" x="1" y="7" width="25" height="15" v-bind:stroke="currentSelectedTools == 'select' ? '#00ccff' : '#fff'"
+                stroke-dasharray="4,1" />
+            </g>
+            <path v-bind:d="value" fill="#2F2F2C" v-else />
+          </svg>
+        </div>
+      </div>
+      <div class="workarea">
+        <div id="canvas_container">
+          <!--画布-->
+          <svg id="canvas_editor" v-if="book" v-bind:view-box.camel="currentPageSize.viewbox_value" v-on:click="canvasClick()">
+            <!--页面-->
+            <svg id="canvas_page" x="0" y="0" v-bind:width="currentPageSize.width" v-bind:height="currentPageSize.height"
+              style="background-color:white;">
+              <defs>
+                <pattern id="grid" x="0" y="0" v-bind:width="config.gridSize" v-bind:height="config.gridSize"
+                  patternUnits="userSpaceOnUse" style="stroke: lightblue; stroke-width:3.1">
+                  <polyline v-bind:points="config.gridSize+',0 0,0 0,'+config.gridSize" style="fill:none;" />
+                </pattern>
+                <rect id="rect_page" v-bind:width="currentPageSize.width" v-bind:height="currentPageSize.height" />
+              </defs>
+              <!--白色背景-->
+              <use href="#rect_page" fill="white" />
+              <!--图片背景-->
+              <image v-bind:href="currentPage.background.image" v-bind:width="currentPageSize.width" v-bind:height="currentPageSize.height"
+                preserveAspectRatio="xMidYMid slice" />
+              <!--网格-->
+              <use href="#rect_page" style="fill: url('#grid')" v-if="menu.viewGrid" />
+
+              <!--页面元素-->
+              <g v-for="(element, index) in currentPage.elements" v-show="element.display" v-bind:transform="elementTransform(element)">
+                <g v-if="element.type === 'image' || element.type === 'decorate' || element.type === 'shape'">
+                  <!--裁切路径-->
+                  <clipPath v-if="element.type === 'image' && element.shape !== 'rect'" v-bind:id="'clip'+index">
+                    <circle v-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
+                      v-bind:r="elementCircle(element).r" />
+                    <ellipse v-else-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx" v-bind:cy="elementEllipse(element).cy"
+                      v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" />
+                  </clipPath>
+                  <!--图片-->
+                  <image v-if="(element.type === 'image' || element.type === 'decorate') && element.image.url!=null"
+                    v-bind:x="element.x + element.image.translate_x" v-bind:y="element.y + element.image.translate_y"
+                    v-bind:width="element.width * element.image.width_scale" v-bind:height="element.height * element.image.height_scale"
+                    v-bind:href="element.image.url" v-bind:clip-path="element.shape!=='rect' ? 'url(#clip'+index+')' : ''"
+                    preserveAspectRatio="xMidYMid slice" />
+                  <!--图形-->
+                  <g v-if="element.type === 'shape' || element.type === 'image'">
+                    <rect v-if="element.shape==='rect'" v-bind:x="element.x" v-bind:y="element.y" v-bind:width="element.width"
+                      v-bind:height="element.height" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+                      v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
+                      v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity"
+                      v-bind:rx="element.rect.rx" v-bind:ry="element.rect.ry" />
+                    <circle v-else-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
+                      v-bind:r="elementCircle(element).r" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+                      v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
+                      v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" />
+                    <ellipse v-else-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx" v-bind:cy="elementEllipse(element).cy"
+                      v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" v-bind:stroke="element.stroke"
+                      v-bind:stroke-width="element.is_stroke?element.stroke_width:0" v-bind:stroke-dasharray="element.stroke_dasharray"
+                      v-bind:stroke-opacity="element.stroke_opacity" v-bind:fill="element.is_fill?element.fill:'none'"
+                      v-bind:fill-opacity="element.fill_opacity" />
+                  </g>
+                  <!--面板-->
+                  <rect class="elementPanel" v-bind:id="'panel'+index" v-bind:x="element.x" v-bind:y="element.y"
+                    v-bind:width="element.width" v-bind:height="element.height" v-on:click="selectElement(index)" />
+                </g>
+                <g v-else-if="element.type === 'text'">
+                  <!--文字-->
+                  <rect v-bind:x="element.x" v-bind:y="element.y" v-bind:width="element.width" v-bind:height="element.height"
+                    fill="none" stroke="red"></rect>
+                  <rect v-bind:x="element.text.drawBox.x" v-bind:y="element.text.drawBox.y" v-bind:width="element.text.drawBox.width"
+                    v-bind:height="element.text.drawBox.height" fill="none" stroke="green"></rect>
+                  <text v-for="(line,index) in element.text.lines" v-bind:x="line.x" v-bind:y="line.y"
+                    v-bind:font-family="element.text.fontFamily" v-bind:font-weight="element.text.fontWeight"
+                    v-bind:font-size="element.text.fontSize" v-bind:text-length.camel="line.stretch ? element.width : line.width"
+                    alignment-baseline="text-before-edge">{{line.text}}</text>
+                </g>
+              </g>
+              <!--封面和护封的书脊-->
+              <g v-if="currentPage.page_type === 0 || currentPage.page_type === 1">
+                <!--书脊参考线-->
+                <path v-bind:d="spinePath(currentPage, 'left')" style="stroke: lightgray; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
+                <path v-bind:d="spinePath(currentPage, 'right')" style="stroke: lightgray; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
+                <!--书名-->
+                <text v-bind:x="spineBookName(currentPage).x" v-bind:y="spineBookName(currentPage).y" style="writing-mode: tb; font-weight: bold;"
+                  v-bind:font-size="spineBookName(currentPage).fontSize+'px'" v-bind:font-family="spineBookName(currentPage).fontFamily"> {{book.name}}
+                  <tspan dy="1em" font-weight="normal">①</tspan>
+                </text>
+              </g>
+            </svg>
+            <!--出血线-->
+            <path v-bind:d="bleedPath" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
+            <!--双页分割线-->
+            <path v-if="currentPageSize.single_page===0" v-bind:d="midPath" style="stroke: darkgray; stroke-width:3; stroke-dasharray: 10;;"></path>
+            <!--            <path v-if="currentPageSize.single_page===0" v-bind:d="midPathTop" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
+            <path v-if="currentPageSize.single_page===0" v-bind:d="midPathBottom" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path> -->
+            <!--拖动组-->
+            <g v-show="currentElementIndex>-1 && currentSelectedTools==='pointer'" v-bind:transform="dragObj.transform">
+              <!--拖动层-->
+              <rect id="dragPanel" v-bind:x="dragObj.panel.x" v-bind:y="dragObj.panel.y" v-bind:width="dragObj.panel.width"
+                v-bind:height="dragObj.panel.height"></rect>
+              <!--旋转圆圈-->
+              <line v-bind:x1="dragObj.line.x1" v-bind:y1="dragObj.line.y1" v-bind:x2="dragObj.line.x2" v-bind:y2="dragObj.line.y2"
+                class="dragPoint" />
+              <circle id="dragCircle" v-bind:cx="dragObj.circle.cx" v-bind:cy="dragObj.circle.cy" v-bind:r="config.dragPointSize/2"
+                class="dragPoint" style="cursor: url(./images/rotate.png) 12 12, auto;"></circle>
+              <!--拖拽控制点-->
+              <rect id="dragPointTL" v-bind:x="dragObj.tl.x" v-bind:y="dragObj.tl.y" v-bind:width="config.dragPointSize"
+                v-bind:height="config.dragPointSize" class="dragPoint" style="cursor: nw-resize;"></rect>
+              <rect id="dragPointT" v-bind:x="dragObj.t.x" v-bind:y="dragObj.t.y" v-bind:width="config.dragPointSize"
+                v-bind:height="config.dragPointSize" class="dragPoint" style="cursor: n-resize;"></rect>
+              <rect id="dragPointTR" v-bind:x="dragObj.tr.x" v-bind:y="dragObj.tr.y" v-bind:width="config.dragPointSize"
+                v-bind:height="config.dragPointSize" class="dragPoint" style="cursor: ne-resize;"></rect>
+              <rect id="dragPointR" v-bind:x="dragObj.r.x" v-bind:y="dragObj.r.y" v-bind:width="config.dragPointSize"
+                v-bind:height="config.dragPointSize" class="dragPoint" style="cursor: e-resize;"></rect>
+              <rect id="dragPointBR" v-bind:x="dragObj.br.x" v-bind:y="dragObj.br.y" v-bind:width="config.dragPointSize"
+                v-bind:height="config.dragPointSize" class="dragPoint" style="cursor: se-resize;"></rect>
+              <rect id="dragPointB" v-bind:x="dragObj.b.x" v-bind:y="dragObj.b.y" v-bind:width="config.dragPointSize"
+                v-bind:height="config.dragPointSize" class="dragPoint" style="cursor: s-resize;"></rect>
+              <rect id="dragPointBL" v-bind:x="dragObj.bl.x" v-bind:y="dragObj.bl.y" v-bind:width="config.dragPointSize"
+                v-bind:height="config.dragPointSize" class="dragPoint" style="cursor: sw-resize;"></rect>
+              <rect id="dragPointL" v-bind:x="dragObj.l.x" v-bind:y="dragObj.l.y" v-bind:width="config.dragPointSize"
+                v-bind:height="config.dragPointSize" class="dragPoint" style="cursor: w-resize;"></rect>
+            </g>
+            <!--选择框-->
+            <g v-show="currentSelectedTools!=='pointer'">
+              <rect id="selectPanel" v-bind:x="currentPageSize.viewbox_x" y="0" v-bind:width="currentPageSize.viewbox_width"
+                v-bind:height="currentPageSize.viewbox_height" fill="red" fill-opacity="0" style="cursor:crosshair;" />
+              <rect id="select" v-bind:x="selectObj.x" v-bind:y="selectObj.y" v-bind:width="selectObj.width"
+                v-bind:height="selectObj.height" stroke="#666" stroke-width="3" stroke-dasharray="18,12" fill="rgb(22,145,232)"
+                fill-opacity="0.1" v-show="currentSelectedTools==='select'" />
+            </g>
+
+          </svg>
+        </div>
+
+        <div class="page-panel" v-show="book">
+          <button class="button" v-on:click="prePage()">上一页</button> <br>
+          <button class="button" v-on:click="nextPage()">下一页</button><br>
+          <button class="button" v-on:click="savePage(currentPageIndex)">保存页</button><br>
+          <button class="button" v-on:click="showCreatePagePanel()">新增页</button>
+        </div>
+
+      </div>
+      <div class="sidebar_right">
+        <div v-if="currentElementIndex>-1">
+          <p>位置和大小</p>
+          <div class="group">
+            <div>
+              <label>X:</label>
+              <input type="number" v-model.number="currentElement.x" />
+            </div>
+            <div>
+              <label>Y:</label>
+              <input type="number" v-model.number="currentElement.y" />
+            </div>
+            <div>
+              <label>宽:</label>
+              <input type="number" v-model.number="currentElement.width" />
+            </div>
+            <div>
+              <label>高:</label>
+              <input type="number" v-model.number="currentElement.height" />
+            </div>
+          </div>
+          <p>形状和旋转</p>
+          <div class="group">
+            <div>
+              <label>形状:</label>
+              <select v-model="currentElement.shape">
+                <option value="rect">矩形</option>
+                <option value="circle">圆形</option>
+                <option value="ellipse">椭圆</option>
+              </select>
+            </div>
+            <div>
+              <label>角度:</label>
+              <input type="number" v-model.number="currentElement.angle" />
+            </div>
+            <div v-show="currentElement.shape==='rect'">
+              <div>
+                <label>圆角x:</label>
+                <input type="number" v-model.number="currentElement.rect.rx" />
+              </div>
+              <div>
+                <label>圆角y:</label>
+                <input type="number" v-model.number="currentElement.rect.ry" />
+              </div>
+            </div>
+          </div>
+          <p>边框</p>
+          <div class="group">
+            <div>
+              <label>显示:</label>
+              <input type="checkbox" v-model="currentElement.is_stroke" />
+            </div>
+            <div>
+              <label>宽度:</label>
+              <input type="number" v-model.number="currentElement.stroke_width" />
+            </div>
+            <div>
+              <label>颜色:</label>
+              <input type="text" v-model.lazy="currentElement.stroke" />
+            </div>
+            <div>
+              <label>虚线:</label>
+              <input type="text" v-model.lazy="currentElement.stroke_dasharray" />
+            </div>
+            <div>
+              <label>透明度:</label>
+              <input type="text" v-model.number="currentElement.stroke_opacity" />
+            </div>
+          </div>
+          <p>填充</p>
+          <div class="group">
+            <div>
+              <label>填充:</label>
+              <input type="checkbox" v-model="currentElement.is_fill" />
+            </div>
+            <div>
+              <label>颜色:</label>
+              <input type="text" v-model.lazy="currentElement.fill" />
+            </div>
+            <div>
+              <label>透明度:</label>
+              <input type="number" v-model.number="currentElement.fill_opacity" />
+            </div>
+          </div>
+          <p>图片</p>
+          <button v-on:click="addImage()">添加图片</button>
+          <div class="group" v-if="currentElement.image!=null">
+            <div>
+              <label>路径：</label>
+              <input type="text" v-model.lazy="currentElement.image.url" />
+            </div>
+            <div>
+              <label>translate_x:</label>
+              <input type="number" v-model.number="currentElement.image.translate_x" />
+            </div>
+            <div>
+              <label>translate_y:</label>
+              <input type="number" v-model.number="currentElement.image.translate_y" />
+            </div>
+            <div>
+              <label>宽比例:</label>
+              <input type="number" v-model.number="currentElement.image.width_scale" />
+            </div>
+            <div>
+              <label>高比例:</label>
+              <input type="number" v-model.number="currentElement.image.height_scale" />
+            </div>
+            <!--            <div>
+              <span>图片信息：</span>
+              <span>{{currentElement.image.info.width}}*{{currentElement.image.info.height}}</span>
+              <span>{{currentElement.image.info.flag}}</span>
+            </div> -->
+          </div>
+          <p>其他</p>
+          <div class="group">
+            <div>
+              <label>显示:</label>
+              <input type="checkbox" v-model="currentElement.display" />
+            </div>
+            <div>
+              <label>锁定:</label>
+              <input type="checkbox" v-model="currentElement.fixed" />
+            </div>
+          </div>
+        </div>
+        <div v-if="currentElementIndex==-1 && currentPageIndex>-1">
+          <p>页面信息</p>
+          <div class="group">
+            <label>背景图片:</label>
+            <input type="text" v-model.lazy="currentPage.background.image" />
+          </div>
+          <div class="group">
+            <label>页面类型:</label>
+            <span>{{book.basepages[currentPage.page_type].name}}</span>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar_bottom" v-if="book">
+        <div id="pagesContainer" v-bind:style="{'width': pagesContainerWidth + 'px', 'left': pagesContainerLeft + 'px'}">
+          <div v-for="(page,pageIndex) in book.pages" class="page" v-bind:style="{width: getSize(page, config.pageContainerHeight).width + 'px'}">
+            <svg v-bind:width="getSize(page, config.pageContainerHeight).width" v-bind:height="config.pageContainerHeight"
+              v-bind:view-box.camel="getSize(page, config.pageContainerHeight).viewbox_value" v-on:click="goPage(pageIndex)">
+              <!--图片背景 直接设置在svg上-->
+              <!-- <rect v-bind:width="book.basepages[page.page_type].width_px" v-bind:height="book.basepages[page.page_type].height_px" fill="white"/> -->
+              <!--图片背景-->
+              <image v-bind:href="page.background.image" v-bind:width="book.basepages[page.page_type].width_px"
+                v-bind:height="book.basepages[page.page_type].height_px" preserveAspectRatio="xMidYMid slice" />
+              <!--页面元素-->
+              <g v-for="(element, index) in page.elements" v-show="element.display" v-bind:transform="elementTransform(element)">
+                <!--裁切路径-->
+                <clipPath v-if="element.shape!=='rect'" v-bind:id="'clip_' + pageIndex + '_' + index">
+                  <circle v-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
+                    v-bind:r="elementCircle(element).r" />
+                  <ellipse v-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx" v-bind:cy="elementEllipse(element).cy"
+                    v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" />
+                </clipPath>
+                <!--图片-->
+                <image v-if="element.type==='image' && element.image.url!=null" v-bind:x="element.x + element.image.translate_x"
+                  v-bind:y="element.y + element.image.translate_y" v-bind:width="element.width * element.image.width_scale"
+                  v-bind:height="element.height * element.image.height_scale" v-bind:href="element.image.url"
+                  v-bind:clip-path="element.shape!=='rect' ? 'url(#clip_' + pageIndex + '_' + index + ')' : ''"
+                  preserveAspectRatio="xMidYMid slice" />
+                <!--边框-->
+                <rect v-if="element.shape==='rect'" v-bind:x="element.x" v-bind:y="element.y" v-bind:width="element.width"
+                  v-bind:height="element.height" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+                  v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
+                  v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity"
+                  v-bind:rx="element.rect.rx" v-bind:ry="element.rect.ry" />
+                <circle v-else-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
+                  v-bind:r="elementCircle(element).r" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+                  v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
+                  v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" />
+                <ellipse v-else-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx" v-bind:cy="elementEllipse(element).cy"
+                  v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" v-bind:stroke="element.stroke"
+                  v-bind:stroke-width="element.is_stroke?element.stroke_width:0" v-bind:stroke-dasharray="element.stroke_dasharray"
+                  v-bind:stroke-opacity="element.stroke_opacity" v-bind:fill="element.is_fill?element.fill:'none'"
+                  v-bind:fill-opacity="element.fill_opacity" />
+              </g>
+            </svg>
+            <div class="currentPage" v-show="pageIndex==currentPageIndex"></div>
+            <p>{{book.basepages[page.page_type].name}}-{{page.sort + 1}}</p>
+          </div>
+        </div>
+      </div>
+      <ul class="contextmenu" v-show="contextMenu.show" v-bind:style="{left:contextMenu.left + 'px', top: contextMenu.top + 'px'}">
+        <li v-bind:class="{'disabled' : contextMenu.source === 'page'}">
+          <a v-on:click="cutElement(contextMenu.source)">剪切 <span>ctrl+x</span></a>
+        </li>
+        <li v-bind:class="{'disabled' : contextMenu.source === 'page'}">
+          <a v-on:click="copyElement(contextMenu.source)">复制 <span>ctrl+c</span></a>
+        </li>
+        <li v-bind:class="{'disabled' : sourceElement == null}">
+          <a v-on:click="pasteElement(contextMenu.source)">粘贴 <span>ctrl+v</span></a>
+        </li>
+        <li class="separator"></li>
+        <li v-bind:class="{'disabled' : contextMenu.source === 'page'}">
+          <a v-on:click="deleteElement(contextMenu.source)">删除 <span>⌫</span></a>
+        </li>
+        <li class="separator"></li>
+        <li v-bind:class="{'disabled':contextMenu.source === 'page'}">
+          <a v-on:click="setElementTop(contextMenu.source)">置于顶层 <span>ctrl+shift+↑</span></a>
+        </li>
+        <li v-bind:class="{'disabled':contextMenu.source === 'page'}">
+          <a v-on:click="setElementUp(contextMenu.source)">置于上一层 <span>ctrl+↑</span></a>
+        </li>
+        <li v-bind:class="{'disabled':contextMenu.source === 'page'}">
+          <a v-on:click="setElementDown(contextMenu.source)">置于下一层 <span>ctrl+↓</span></a>
+        </li>
+        <li v-bind:class="{'disabled':contextMenu.source === 'page'}">
+          <a v-on:click="setElementBack(contextMenu.source)">置于底层 <span>ctrl+shift+↓</span></a>
+        </li>
+      </ul>
+
+      <!--新增页弹出面板-->
+      <div id="createPagePanel" style="display: none; padding: 1rem;">
+        <p>页面类型：</p>
+        <div v-for="(value,key,index) in book.basepages" style="display: inline-block; margin-right: 1.5rem;">
+          <label>
+            <input type="radio" v-bind:value="key" v-model.number="currentPagetype" /> {{value.name}}（{{value.min_pages == value.max_pages ? value.min_pages + '页' : value.min_pages + '页-' + value.max_pages + '页'}}）
+          </label>
+        </div>
+        <div v-show="currentPagetype == '2'" style="display: inline-block; margin-right: 1.5rem; margin-top: 1rem;">
+          <p>内页位置：</p>
+          <label>
+            <input type="radio" value="0" v-model.number="currentPagegroup" /> 前置（不显示页码）
+          </label>
+          <label>
+            <input type="radio" value="1" v-model.number="currentPagegroup" /> 正常
+          </label>
+          <label>
+            <input type="radio" value="2" v-model.number="currentPagegroup" /> 后置（不显示页码）
+          </label>
+        </div>
+        <p style="font-size: 12px; color: red;">{{addPageMsg}}</p>
+        <div style="text-align: right;">
+          <button class="button" v-on:click="createPage()">确定</button>
+        </div>
+      </div>
+      <!--手机端查看弹出层-->
+      <div id="qrcodePanel" style="padding: 1rem; display: none; text-align: center;"></div>
+    </div>
+
+    <script src="./lib/jquery.min.js"></script>
+    <script src="./lib/qrcode.min.js"></script>
+    <script src="./lib/layer/layer.js"></script>
+    <script src="./lib/d3.v3.js"></script>
+    <script src="./lib/vue.js"></script>
+    <script src="./js/unit.js"></script>
+    <script src="./js/textbox.js"></script>
+    <script src="./js/editor-config.js"></script>
+    <script src="./js/editor-common.js"></script>
+    <script src="./js/editor-mounted.js"></script>
+    <script src="./js/editor.js"></script>
+  </body>
+</html>

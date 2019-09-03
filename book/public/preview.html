@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>打印预览——易书排版引擎</title>
+    <!-- <link rel="stylesheet" href="./css/editor.css" /> -->
+    <style>
+      @media screen {
+        body {
+          background-color: gray;
+        }
+
+        .page {
+          margin: 2rem auto;
+          box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+          background-color: #fff;
+        }
+      }
+
+      @media print {
+        body {
+          background-color: #fff;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" v-if="book">
+      <div v-for="(page,pageIndex) in viewPages" class="page" v-bind:style="{width: book.basepages[page.page_type].width_view, height: book.basepages[page.page_type].height_view}">
+        <svg v-bind:width="book.basepages[page.page_type].width_view" v-bind:height="book.basepages[page.page_type].height_view"
+          v-bind:view-box.camel="'0 0 ' + book.basepages[page.page_type].width_px + ' ' + book.basepages[page.page_type].height_px">
+          <!--图片背景 直接设置在svg上-->
+          <!-- <rect v-bind:width="book.basepages[page.page_type].width_px" v-bind:height="book.basepages[page.page_type].height_px" fill="white"/> -->
+          <!--图片背景-->
+          <image v-bind:href="page.background.image" v-bind:width="book.basepages[page.page_type].width_px"
+            v-bind:height="book.basepages[page.page_type].height_px" preserveAspectRatio="xMidYMid slice" />
+          <!--页面元素-->
+          <g v-for="(element, index) in page.elements" v-show="element.display" v-bind:transform="elementTransform(element)">
+            <!--裁切路径-->
+            <clipPath v-if="element.shape!=='rect'" v-bind:id="'clip_' + pageIndex + '_' + index">
+              <circle v-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
+                v-bind:r="elementCircle(element).r" />
+              <ellipse v-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx" v-bind:cy="elementEllipse(element).cy"
+                v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" />
+            </clipPath>
+            <!--图片-->
+            <image v-if="element.type==='image' && element.image.url!=null" v-bind:x="element.x + element.image.translate_x"
+              v-bind:y="element.y + element.image.translate_y" v-bind:width="element.width * element.image.width_scale"
+              v-bind:height="element.height * element.image.height_scale" v-bind:href="element.image.url"
+              v-bind:clip-path="element.shape!=='rect' ? 'url(#clip_' + pageIndex + '_' + index + ')' : ''"
+              preserveAspectRatio="xMidYMid slice" />
+            <!--边框-->
+            <rect v-if="element.shape==='rect'" v-bind:x="element.x" v-bind:y="element.y" v-bind:width="element.width"
+              v-bind:height="element.height" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+              v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
+              v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" v-bind:rx="element.rect.rx"
+              v-bind:ry="element.rect.ry" />
+            <circle v-else-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
+              v-bind:r="elementCircle(element).r" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+              v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
+              v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" />
+            <ellipse v-else-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx" v-bind:cy="elementEllipse(element).cy"
+              v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" v-bind:stroke="element.stroke"
+              v-bind:stroke-width="element.is_stroke?element.stroke_width:0" v-bind:stroke-dasharray="element.stroke_dasharray"
+              v-bind:stroke-opacity="element.stroke_opacity" v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" />
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <script src="./lib/jquery.min.js"></script>
+    <script src="./lib/vue.js"></script>
+    <script src="./lib/layer/layer.js"></script>
+    <script src="./js/unit.js"></script>
+    <script src="./js/editor-config.js"></script>
+    <script src="./js/preview.js"></script>
+  </body>
+</html>
