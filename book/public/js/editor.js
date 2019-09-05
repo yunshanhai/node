@@ -1,28 +1,41 @@
 var editor = {
-  width: document.getElementById('canvas_editor').clientWidth,
-  height: document.getElementById('canvas_editor').clientHeight
+  width: 500,
+  height: 300
 };
 
-var resizeFlag = null;
-window.addEventListener('resize', function(){
-  if(resizeFlag){
-    clearTimeout(resizeFlag);
-  }
-  resizeFlag = setTimeout(()=>{
-    editor.width = document.getElementById('canvas_editor').clientWidth;
-    editor.height = document.getElementById('canvas_editor').clientHeight;
-  },300);
-});
-
+var picker;
 //阻止右键菜单
 window.onload = function(){
   document.oncontextmenu = function(){
     event.preventDefault();
   }
+  
+  picker = new ColorPicker(document.getElementById('picker'), {
+    onUpdate: function(rgb) {
+      let rgbStr = "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
+      if(app.pickColorFlag==='stroke'){
+        app.currentElement.stroke = rgbStr.colorHex();
+      }else if(app.pickColorFlag==='fill'){
+        app.currentElement.fill = rgbStr.colorHex();
+      }
+    }
+  });
 }
 
 var data = {
   config : config,
+  basebooks: [],
+  basepages: [],
+  newBook: {
+    theme: 0,
+    basebook_id: 0,
+    name: '',
+    author: '',
+    show_page_num: 1,
+    fascicule: 0,
+    fascicule_type: 0
+  },
+  createBookMsg: '',
   // book: {},
   currentPageIndex: -1,
   //currentPage
@@ -68,7 +81,10 @@ var data = {
     //剪切或复制
     isCut: false,
     source: null //page or element
-  }
+  },
+  //0：书籍，1：页面，2：元素
+  rightPanelIndex: 0 ,
+  pickColorFlag: null
 };
 var app;
 
@@ -105,13 +121,13 @@ if(id!=null){
           //   book.basepages[page.page_type].total_page++;
           // }
         }
-        
-        //生成页面类型的像素大小
-        for(let i in book.basepages){
-          let basepage = book.basepages[i];
-          basepage.width_px = mm2px(basepage.width, config.dpi);
-          basepage.height_px = mm2px(basepage.height, config.dpi);
-        }
+      }
+      
+      //生成页面类型的像素大小
+      for(let i in book.basepages){
+        let basepage = book.basepages[i];
+        basepage.width_px = mm2px(basepage.width, config.dpi);
+        basepage.height_px = mm2px(basepage.height, config.dpi);
       }
       
       data.book = book;
@@ -243,7 +259,14 @@ if(id!=null){
         // },
         //当前页像素尺寸：宽高和出血线
         currentPageSize: function(){
-          let basepage = this.book.basepages[this.currentPage.page_type];
+          
+          let basepage = null;
+          
+          if(this.currentPage != null){
+            basepage = this.book.basepages[this.currentPage.page_type];
+          }else{
+            basepage = this.book.basepages[1];
+          }
           
           let viewbox_height = basepage.height_px;
           let viewbox_width = this.editor.width / this.editor.height * viewbox_height;
@@ -395,6 +418,87 @@ if(id!=null){
         viewGrid: function(){
           this.menu.viewGrid = !this.menu.viewGrid;
         },
+        //新建book
+        showCreateBookPanel: function(){
+          new Promise(function(resolve, reject){
+            if(app.basebooks.length == 0){
+              $.ajax({
+                url: '/basebook/list',
+                dataType: 'json',
+                success: function(result){
+                  if(result.statusCode == 200){
+                    app.basebooks = app.basebooks.concat(result.data);
+                    resolve();
+                  }else{
+                    reject(result.message);
+                  }
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown){
+                  reject('未知错误');
+                }
+              })
+            }else{
+              resolve();
+            }
+          }).then(function(){
+            this.createPagePanelLayerIndex = layer.open({
+              title: "新建BOOK",
+              type: 1,
+              skin: 'layui-layer-rim', //加上边框
+              area: '520px', //宽高
+              shadeClose: true,
+              content: $('#createBookPanel')
+            });
+          })
+          .catch(function(err){
+            layer.msg(err)
+          });
+          
+        },
+        createBook: function(){
+          this.createBookMsg = '';
+          
+          if(this.newBook.basebook_id==0){
+            this.createBookMsg = '请选择规格类型';
+            return;
+          }
+          if(this.newBook.name == ''){
+            this.createBookMsg = '请输入书名';
+            return;
+          }
+          if(this.newBook.author == ''){
+            this.createBookMsg = '请输入作者';
+            return;
+          }
+          
+          $.ajax({
+            type: 'post',
+            url: '/book/add',
+            data: JSON.stringify(app.newBook),
+            contentType: 'application/json; charset=utf-8',
+            dataType: 'json',
+            success: function(result){
+              if(result.statusCode == 200){
+                location.href = '/index.html?id=' + result.data;
+              }
+              // layer.close(app.createPagePanelLayerIndex);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown){
+              app.createBookMsg = '创建失败，未知错误';
+            }
+          });
+        },
+        pickColor: function(flag){
+          this.pickColorFlag = flag;
+          this.createPagePanelLayerIndex = layer.open({
+            title: false,
+            type: 1,
+            // skin: 'layui-layer-rim', //加上边框
+            // area: '520px', //宽高
+            shadeClose: true,
+            content: $('#picker')
+          });
+        },
         //显示新增页
         showCreatePagePanel: function(){
           this.createPagePanelLayerIndex = layer.open({
@@ -408,15 +512,14 @@ if(id!=null){
         },
         //新增页
         createPage: function(){
+          let total = this.getTotalPageNumByPageType(this.currentPagetype);
+          let basepage = this.book.basepages[this.currentPagetype];
           
-          let page_group = this.currentPagetype === 2 ? this.currentPagegroup : 0;
-          let total = this.getTotalPageNumByPageTypeAndPageGroup(this.currentPagetype, page_group);
-          
-          if((this.currentPagetype === 0 || this.currentPagetype == '1') && total > 0){
-            this.addPageMsg = '封面、护封只能添加一页';
+          if(total>=basepage.max_pages){
+            this.addPageMsg = '{0}可添加{1}页，已添加{2}页，已达上限'.format(basepage.name, basepage.max_pages, total) ;
             return;
           }
-          
+          let page_group = this.currentPagetype === 2 ? this.currentPagegroup : 0;
           $.ajax({
             type: "post",
             url: "/book/page/add",
@@ -461,19 +564,12 @@ if(id!=null){
             }
           });
         },
-        //根据页面类型和内页分组获取相应的总页数，页面类型为封面或者护封时不用判断page_group，页面类型为内容页时需要判断page_group
-        getTotalPageNumByPageTypeAndPageGroup(page_type, page_group){
+        //根据页面类型获取相应的总页数
+        getTotalPageNumByPageType(page_type){
           let total = 0;
           for(let i in this.book.pages){
-            let page = this.book.pages[i];
-            if(page_type === 2){
-              if(page.page_type === page_type && page.page_group === page_group){
-                total++;
-              }
-            }else{
-              if(page.page_type === page_type){
-                total++;
-              }
+            if(this.book.pages[i].page_type === page_type){
+              total++;
             }
           }
           
@@ -594,6 +690,23 @@ if(id!=null){
             fontFamily: '微软雅黑'
           };
         },
+        spineBookAuthor: function(page){
+          
+          // if(page.page_type === 0 || page.page_type === 1){
+            let basepage = this.book.basepages[page.page_type];
+          // }
+          let fontSizePt = 16;
+          let fontSize = px2px(fontSizePt, 72, 300);
+          let x = basepage.width_px / 2;
+          let y = basepage.height_px / 3 * 2;
+          
+          return {
+            x: x,
+            y: y,
+            fontSize: fontSize,
+            fontFamily: '微软雅黑'
+          };
+        },
         //计算element的內圆属性
         elementCircle: function(element){
           return {
@@ -623,11 +736,13 @@ if(id!=null){
         selectElement: function(index){
           event.stopPropagation();
           this.currentElementIndex = index;
+          this.rightPanelIndex = 2;
         },
         //画布点击
         canvasClick: function(){
           event.stopPropagation();
           this.currentElementIndex = -1;
+          this.rightPanelIndex = 1;
         },
         //打印预览
         preview: function(type){
@@ -772,6 +887,18 @@ if(id!=null){
         },
         addImage: function(){
           addImage(this.currentElement);
+        },
+        selectedRightPanel: function(index){
+          this.rightPanelIndex = index;
+        },
+        fasciculeNumToText: function(num, fascicule_type){
+          return fasciculeNumToText(num, fascicule_type);
+        },
+        colorFormat: function(color){
+          // if(color[0] == '#'){
+          //   return color.substr(1);
+          // }
+          return color;
         }
       },
       filters: {

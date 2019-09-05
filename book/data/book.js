@@ -1,4 +1,3 @@
-var config = require('../config/mysql');
 var db = require('./db');
 
 /**
@@ -7,13 +6,11 @@ var db = require('./db');
  * @param {Object} callback
  */
 exports.getBookById = function(id, callback){
-  connection = db.getConnnection();
   var sql = "select * from books where id=?";
-  connection.query(sql, [id], function(err, rows){
+  db.query(sql, [id], function(err, rows){
     error_throw(err);
     callback(rows);
   });
-  connection.end();
 }
 
 /**
@@ -23,14 +20,12 @@ exports.getBookById = function(id, callback){
  */
 exports.addBook = function(book, callback){
   //TODO 对字段的有效性进行校验，尤其theme、basebook_id
-  connection = db.getConnnection();
   var sql = "insert into books (theme, basebook_id, name, author, show_page_num, fascicule, fascicule_type, created_at, updated_at)"
     + " values(?,?,?,?,?,?,?,?,?)";
-  connection.query(sql, book, function(err, result){
+  db.query(sql, book, function(err, result){
     error_throw(err);
     callback(result)
   });
-  connection.end();
 }
 
 /**
@@ -39,13 +34,11 @@ exports.addBook = function(book, callback){
  * @param {Object} callback
  */
 exports.getBasepages = function(basebook_id, callback){
-  connection = db.getConnnection();
   var sql = "select * from basepages where basebook_id=? and enable=1 order by sort";
-  connection.query(sql, [basebook_id], function(err, rows){
+  db.query(sql, [basebook_id], function(err, rows){
     error_throw(err);
     callback(rows);
   });
-  connection.end();
 }
 
 /**
@@ -54,13 +47,11 @@ exports.getBasepages = function(basebook_id, callback){
  * @param {Object} callback
  */
 exports.getPages = function(book_id, callback){
-  connection = db.getConnnection();
   var sql = "select * from pages where book_id=? order by page_type,page_group,sort";
-  connection.query(sql, [book_id], function(err, rows){
+  db.query(sql, [book_id], function(err, rows){
     error_throw(err);
     callback(rows);
   });
-  connection.end();
 }
 
 /**
@@ -69,13 +60,11 @@ exports.getPages = function(book_id, callback){
  * @param {function} callback
  */
 exports.addPage = function(page, callback){
-  connection = db.getConnnection();
   var sql = "insert into pages(book_id,page_type,page_group,flag,background,elements,sort) values(?,?,?,?,?,?,?)";
-  connection.query(sql, page, function(err, result){
+  db.query(sql, page, function(err, result){
     error_throw(err);
     callback(result);
   });
-  connection.end();
 }
 
 /**
@@ -85,9 +74,8 @@ exports.addPage = function(page, callback){
  * @param {function} callback
  */
 exports.updatePageById = function(id, page, callback){
-  connection = db.getConnnection();
   var sql = "update pages set background=?,elements=? where id=?";
-  connection.query(sql, [
+  db.query(sql, [
       page.background,
       page.elements,
       id
@@ -95,7 +83,6 @@ exports.updatePageById = function(id, page, callback){
     error_throw(err);
     callback(result);
   });
-  connection.end();
 }
 
 function error_throw(err){

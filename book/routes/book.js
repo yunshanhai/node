@@ -2,15 +2,15 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var router = express.Router();
 var dataBook = require('../data/book');
+var db = require('../data/db');
 
 /**
  * url /book/0
+ * 获取书籍信息
  */
 router.get('/:id', function(req, res, next) {
   var book_id = req.params.id;
-  // console.log(req.params);
   dataBook.getBookById(book_id, function(books){
-    // console.log(books);
     if(books.length>0){
       let book = books[0];
       book.basepages = {};
@@ -40,10 +40,17 @@ router.get('/:id', function(req, res, next) {
   });
 });
 
-router.post('/add', function(req, res, next){
-  console.log(req.body);
-  let timestamp = new Date().format('yyyy-MM-dd HH:mm:ss');
-  let book = [
+/**
+ * url /book/add
+ * 创建书
+ * @param {Object} req
+ * @param {Object} res
+ */
+router.post('/add', function(req, res){
+  //todo 验证字段有效性
+ 
+  let timestamp = new Date().format('yyyy-MM-dd hh:mm:ss');
+  let sqlParams = [
     req.body.theme,
     req.body.basebook_id,
     req.body.name,
@@ -55,15 +62,50 @@ router.post('/add', function(req, res, next){
     timestamp
   ];
   
-  dataBook.addBook(book, function(result){
+  new Promise((resolve, reject) => {
+    $sql = `insert into books 
+      (theme, basebook_id, name, author, show_page_num, fascicule, fascicule_type, created_at, updated_at)
+      values(?,?,?,?,?,?,?,?,?)`;
+    
+    db.query($sql, sqlParams, function(err, result){
+        if(err){
+          console.log(err);
+          reject(err);
+        }
+        resolve(result);
+      });
+  }).then((result) => {
     res.send({
       statusCode: 200,
       message: 'success',
       data: result.insertId
     })
+    .end();
+  })
+  .catch((err) => {
+    res.send({
+      statusCode: 500,
+      message: 'internal error'
+    })
+    .end();
   });
+  
+  // dataBook.addBook(book, function(result){
+  //   res.send({
+  //     statusCode: 200,
+  //     message: 'success',
+  //     data: result.insertId
+  //   })
+  // });
 });
 
+/**
+ * url /book/update
+ * 修改书籍信息
+ * @param {Object} req
+ * @param {Object} res
+ * @param {Object} next
+ */
 router.post('/update', function(req, res, next){
   
 });

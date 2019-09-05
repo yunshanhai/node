@@ -1,5 +1,22 @@
 let mounted = function() {
   console.log('---mounted');
+  
+  //---------------浏览器窗口大小调整时自动调整画布大小-------------------------
+  editor.width = document.getElementById('canvas_editor').clientWidth;
+  editor.height = document.getElementById('canvas_editor').clientHeight;
+  
+  var resizeFlag = null;
+  window.addEventListener('resize', function(){
+    if(resizeFlag){
+      clearTimeout(resizeFlag);
+    }
+    resizeFlag = setTimeout(()=>{
+      editor.width = document.getElementById('canvas_editor').clientWidth;
+      editor.height = document.getElementById('canvas_editor').clientHeight;
+    },300);
+  });
+  //--------------------------------------------------------------------------
+  
   let that = this;
   
   //选择层

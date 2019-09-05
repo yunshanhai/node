@@ -69,6 +69,40 @@ String.prototype.getQuery = function(name) {
     return null;  
 } 
 
+String.prototype.colorHex = function(){
+    var that = this;
+    //十六进制颜色值的正则表达式
+    var reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
+    // 如果是rgb颜色表示
+    if (/^(rgb|RGB)/.test(that)) {
+        var aColor = that.replace(/(?:\(|\)|rgb|RGB)*/g, "").split(",");
+        var strHex = "#";
+        for (var i=0; i<aColor.length; i++) {
+            var hex = Number(aColor[i]).toString(16);
+            if (hex.length < 2) {
+                hex = '0' + hex;    
+            }
+            strHex += hex;
+        }
+        if (strHex.length !== 7) {
+            strHex = that;    
+        }
+        return strHex;
+    } else if (reg.test(that)) {
+        var aNum = that.replace(/#/,"").split("");
+        if (aNum.length === 6) {
+            return that;    
+        } else if(aNum.length === 3) {
+            var numHex = "#";
+            for (var i=0; i<aNum.length; i+=1) {
+                numHex += (aNum[i] + aNum[i]);
+            }
+            return numHex;
+        }
+    }
+    return that;
+};
+
 /**
  * 像素转毫米，默认96dpi
  * @param {Integer} px 像素
@@ -150,4 +184,27 @@ function deepCopy(obj){
         newobj[attr] = deepCopy(obj[attr]);
     }
     return newobj;
+}
+
+
+
+function fasciculeNumToText(num, fascicule_type){
+  num = parseInt(num);
+  fascicule_type = parseInt(fascicule_type);
+  
+  if(num>10 || num < 1){
+    return "";
+  }
+  if(fascicule_type<0 || fascicule_type > 3){
+    return "";
+  }
+  
+  let fasciculeNum = {
+    type0 : ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'],
+    type1 : ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'],
+    type2 : ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'],
+    type3 : ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ', 'Ⅷ', 'Ⅸ', 'Ⅹ']
+  };
+  
+  return fasciculeNum['type' + fascicule_type][num - 1];
 }

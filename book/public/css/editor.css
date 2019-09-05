@@ -114,15 +114,6 @@ body {
   background-color: #fff;
 }
 
-.sidebar_right {
-  position: fixed;
-  top: 30px;
-  right: 0px;
-  width: 220px;
-  height: calc(100vh - 30px);
-  padding: 0px 5px;
-}
-
 .workarea {
   position: fixed;
   top: 30px;
@@ -143,22 +134,90 @@ body {
   overflow: hidden;
 }
 
+.sidebar_right {
+  position: fixed;
+  top: 30px;
+  right: 5px;
+  width: 210px;
+  height: calc(100vh - 30px);
+  /* padding: 0px 5px; */
+  background-color: #3f3f3c;
+  border:solid 1px #202020;
+}
+
+.sidebar_right .menus {
+  height: 30px;
+  position: relative;
+  /* padding: 0 0 0 50px; */
+  z-index: 2;
+  font-size: 13px;
+}
+.sidebar_right .menus .menu {
+    position: relative;
+    z-index: 5;
+    color: #333;
+    display: block;
+    float: left;
+    width: 33.3333%;
+    text-align: center;
+}
+.sidebar_right .menus .menu_title {
+    cursor: pointer;
+    line-height: 16px;
+    display: inline-block;
+    padding: 7px 10px;
+    z-index: 10;
+    position: relative;
+    vertical-align: top;
+    color: white;
+    width: 100%;
+    border-bottom: solid 1px #202020;
+    background-color: #2f2f2c;
+    /* background: white; */
+    /* color: #333; */
+}
+.sidebar_right .menus .menu_title:hover{
+  background-color: #444442;
+}
+.sidebar_right .menus .menu_title_click{
+  background-color: #3f3f3f;
+  color: #fff;
+  border-bottom:none;
+}
+/* .sidebar_right .menus .menu_title_click:hover{
+  background-color: white;
+} */
+
 .sidebar_right p{
   color: white;
-  margin: 1rem 0 0.5rem;
-}
-.sidebar_right span{
-  color: white;
+  margin: 0.5rem 5px 0.3rem;
 }
 
-.sidebar_right label{
-  width: 35%;
+.sidebar_right .group{
+  font-size: 12px;
+  padding: 0px 1em;
+}
+
+.sidebar_right .group span{
+  color: white;
+  width: 5em;
+  display: inline-block;
+}
+
+.sidebar_right .group label{
   display: inline-block;
   color: #eee;
+  height: 1.5rem;
+  line-height: 1.5rem;
 }
 
-.sidebar_right input[type=text],input[type=number],select{
-  width: 60%;
+.sidebar_right .group input[type=text],input[type=number]{
+  width: 118px;
+  display: inline-block;
+}
+
+.sidebar_right .group select{
+  width: 118px;
 }
 
 
