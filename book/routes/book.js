@@ -163,4 +163,21 @@ router.post('/page/:id', function(req, res, next){
   });
 });
 
+router.get('/:id/images', (req, res) => {
+  $sql = "select * from images where book_id=?";
+  db.query($sql, [req.params.id], (err, result)=>{
+    if(err){
+      res.send({
+        statusCode: 500,
+        message: 'internal error'
+      });
+    }
+    res.send({
+      statusCode: 200,
+      message: 'ok',
+      data: result
+    })
+  });
+});
+
 module.exports = router;

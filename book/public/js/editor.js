@@ -3,23 +3,11 @@ var editor = {
   height: 300
 };
 
-var picker;
 //阻止右键菜单
 window.onload = function(){
   document.oncontextmenu = function(){
     event.preventDefault();
   }
-  
-  picker = new ColorPicker(document.getElementById('picker'), {
-    onUpdate: function(rgb) {
-      let rgbStr = "rgb(" + rgb[0] + ", " + rgb[1] + ", " + rgb[2] + ")";
-      if(app.pickColorFlag==='stroke'){
-        app.currentElement.stroke = rgbStr.colorHex();
-      }else if(app.pickColorFlag==='fill'){
-        app.currentElement.fill = rgbStr.colorHex();
-      }
-    }
-  });
 }
 
 var data = {
@@ -84,7 +72,10 @@ var data = {
   },
   //0：书籍，1：页面，2：元素
   rightPanelIndex: 0 ,
-  pickColorFlag: null
+  pickColorFlag: null,
+  fileImages: [],
+  uploaded: 0,
+  images: []
 };
 var app;
 
@@ -398,8 +389,8 @@ if(id!=null){
           let basepage = this.book.basepages[page.page_type];
           
           let pageSize = {
-            width: basepage.width_px / basepage.height_px * config.pageContainerHeight,
-            height: config.pageContainerHeight,
+            width: basepage.width_px / basepage.height_px * height,
+            height: height,
             viewbox_value: '0 0 ' + basepage.width_px + ' ' + basepage.height_px
           };
           
@@ -486,17 +477,6 @@ if(id!=null){
             error: function(XMLHttpRequest, textStatus, errorThrown){
               app.createBookMsg = '创建失败，未知错误';
             }
-          });
-        },
-        pickColor: function(flag){
-          this.pickColorFlag = flag;
-          this.createPagePanelLayerIndex = layer.open({
-            title: false,
-            type: 1,
-            // skin: 'layui-layer-rim', //加上边框
-            // area: '520px', //宽高
-            shadeClose: true,
-            content: $('#picker')
           });
         },
         //显示新增页
@@ -733,10 +713,12 @@ if(id!=null){
           return "";
         },
         //点击选中当前元素
-        selectElement: function(index){
+        selectElement: function(index, switchPanel = true){
           event.stopPropagation();
           this.currentElementIndex = index;
-          this.rightPanelIndex = 2;
+          if(switchPanel){
+            this.rightPanelIndex = 2;
+          }
         },
         //画布点击
         canvasClick: function(){
@@ -885,8 +867,44 @@ if(id!=null){
             layer.msg('已经置于底层');
           }
         },
-        addImage: function(){
-          addImage(this.currentElement);
+        // addImage: function(){
+        //   addImage(this.currentElement);
+        // },
+        showUploadPanel: function(){
+          this.createPagePanelLayerIndex = layer.open({
+            title: "上传图片",
+            type: 1,
+            skin: 'layui-layer-rim', //加上边框
+            // area: '520px', //宽高
+            shadeClose: true,
+            content: $('#uploadPanel')
+          });
+        },
+        showSelectImagePanel: function(){
+          this.createPagePanelLayerIndex = layer.open({
+            title: "选择图片",
+            type: 1,
+            skin: 'layui-layer-rim', //加上边框
+            // area: '520px', //宽高
+            shadeClose: true,
+            content: $('#selectImagePanel')
+          });
+        },
+        selectImage: function(image){
+          if(this.currentElement.type == 'image'){
+            this.currentElement.image.url = image.url;
+          }else{
+            this.currentElement.type = 'image';
+            this.currentElement.is_fill = false;
+            this.currentElement.image = {
+              translate_x: 0,
+              translate_y: 0,
+              width_scale: 1,
+              height_scale: 1,
+              url: image.url
+            }
+          }
+          
         },
         selectedRightPanel: function(index){
           this.rightPanelIndex = index;
@@ -894,11 +912,46 @@ if(id!=null){
         fasciculeNumToText: function(num, fascicule_type){
           return fasciculeNumToText(num, fascicule_type);
         },
-        colorFormat: function(color){
-          // if(color[0] == '#'){
-          //   return color.substr(1);
-          // }
-          return color;
+        uploadChanged: function(){
+          this.fileImages.splice(0,this.fileImages.length);
+          let input = document.getElementById('files');
+          for(let i = 0; i < input.files.length; i++ ){
+            this.fileImages.push(
+              {
+                url: getObjectURL(input.files[i]),
+                status: 0
+              }
+            );
+          }
+        },
+        upload: function(){
+          this.uploaded = 0;
+          let input = document.getElementById('files');
+          if(input.files.length>0){
+            for(let i=0; i<input.files.length; i++){
+              let formData = new FormData();
+              formData.append('photos', input.files[i]);
+              formData.append('book_id', this.book.id);
+              formData.append('index', i);
+              $.ajax({
+                  type: 'post',
+                  url: '/upload/image',
+                  data: formData,
+                  contentType: false,
+                  processData: false,
+                  cache: false,
+                  success: function(result) {
+                      if(result.statusCode == 200){
+                        app.images.push(result.data);
+                        app.uploaded++;
+                      }
+                  },
+                  error: function (XMLHttpRequest, textStatus, errorThrown) {
+                      console.log(errorThrown);
+                  }
+              });
+            }
+          }
         }
       },
       filters: {
@@ -908,6 +961,15 @@ if(id!=null){
     // initBook(book)
   })
   
+  $.getJSON('/book/' + id + '/images', function(result) {
+    if(result.statusCode==200){
+      for(let i = 0; i < result.data.length; i++){
+        data.images.push(result.data[i]);
+      }
+    }else{
+      console.log(result.message);
+    }
+  })
   // d3.select('body').on('click', function(){
   //   data.menu.showList = false;
   // })

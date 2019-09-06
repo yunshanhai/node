@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+    <style type="text/css">
+      .label{
+          background-image: url('./images/icon/display.svg');
+          background-repeat: no-repeat;
+          width: 30px;
+          height: 30px;
+          visibility: visible;
+          display: inline-block;
+      }
+      .label2{
+          background-image: url('./images/icon/unlock.svg');
+          background-repeat: no-repeat;
+          background-size: 60px 60px;
+          width: 60px;
+          height: 60px;
+          visibility: visible;
+          display: inline-block;
+      }
+    </style>
+	</head>
+	<body>
+    <input type="color" value="#00ff00" name="color" id="color"/>
+    <label class="label"></label>
+     <label class="label2"></label>
+    <input type="checkbox" />
+    <input id="photos" type="file" accept="image/png,image/gif,image/jpeg" multiple="multiple"/>
+    <img id="img1" width="200px" />
+    <script>
+      function getObjectURL(file) {
+          var url = null ;
+          if (window.createObjectURL!=undefined) { // basic
+              url = window.createObjectURL(file) ;
+          } else if (window.URL!=undefined) { // mozilla(firefox)
+              url = window.URL.createObjectURL(file) ;
+          } else if (window.webkitURL!=undefined) { // webkit or chrome
+              url = window.webkitURL.createObjectURL(file) ;
+          }
+          return url ;
+      }
+    </script>
+  </body>
+</html>

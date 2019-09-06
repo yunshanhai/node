@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <title>易书排版引擎</title>
     <link rel="stylesheet" href="./css/editor.css" />
-    <link rel="stylesheet" href="./css/color-picker.css" />
     <style>
       [v-cloak]{ display: none; }
       
@@ -151,7 +150,7 @@
                     </g>
                     <!--面板-->
                     <rect class="elementPanel" v-bind:id="'panel'+index" v-bind:x="element.x" v-bind:y="element.y"
-                      v-bind:width="element.width" v-bind:height="element.height" v-on:click="selectElement(index)" />
+                      v-bind:width="element.width" v-bind:height="element.height" v-if="!element.fixed" v-on:click="selectElement(index)" />
                   </g>
                   <g v-else-if="element.type === 'text'">
                     <!--文字-->
@@ -174,13 +173,14 @@
                   <text v-bind:x="spineBookName(currentPage).x" v-bind:y="spineBookName(currentPage).y" style="writing-mode: tb; font-weight: bold;"
                     v-bind:font-size="spineBookName(currentPage).fontSize+'px'" v-bind:font-family="spineBookName(currentPage).fontFamily">
                     {{book.name}}
-                    <tspan v-bind:dy="book.fascicule_type==1 ? '1.5em' : '0.5em'" font-weight="normal" v-show="book.fascicule>0" v-bind:rotate="book.fascicule_type==1 ? -90 : 0">{{fasciculeNumToText(book.fascicule, book.fascicule_type)}}</tspan>
+                    <tspan v-bind:dy="book.fascicule_type==1 ? '1.5em' : '0.5em'" font-weight="normal" v-show="book.fascicule>0"
+                      v-bind:rotate="book.fascicule_type==1 ? -90 : 0">{{fasciculeNumToText(book.fascicule, book.fascicule_type)}}</tspan>
                   </text>
                   <!--作者-->
                   <text v-bind:x="spineBookAuthor(currentPage).x" v-bind:y="spineBookAuthor(currentPage).y" style="writing-mode: tb; font-weight: bold;"
                     v-bind:font-size="spineBookAuthor(currentPage).fontSize+'px'" fill="#333" v-bind:font-family="spineBookAuthor(currentPage).fontFamily">
                     {{book.author}}
-                    <tspan dy="0.5em" font-weight="normal" font-size="0.8em" font-family="楷体" >著</tspan>
+                    <tspan dy="0.5em" font-weight="normal" font-size="0.8em" font-family="楷体">著</tspan>
                   </text>
                 </g>
               </g>
@@ -242,7 +242,7 @@
       <div class="sidebar_right">
         <div class="menus">
           <div class="menu" style="border-right:solid 1px #202020;">
-            <div class="menu_title" v-bind:class="{'menu_title_click': rightPanelIndex === 0}" v-on:click="selectedRightPanel(0)">书籍</div>
+            <div class="menu_title" v-bind:class="{'menu_title_click': rightPanelIndex === 0}" v-on:click="selectedRightPanel(0)">设计</div>
           </div>
           <div class="menu" style="border-right:solid 1px #202020;">
             <div class="menu_title" v-bind:class="{'menu_title_click': rightPanelIndex === 1}" v-on:click="selectedRightPanel(1)">页面</div>
@@ -309,6 +309,27 @@
                 </div>
               </div>
 
+              <p>主题信息</p>
+              <div class="group">
+                <div>
+                  <label>
+                    <span>主题颜色:</span>
+                    <input type="color" v-model="config.shape.color" />
+                  </label>
+                  <label>
+                    <span>显示边框:</span>
+                    <input type="checkbox" v-model="config.shape.is_stroke" />
+                  </label>
+                  <label>
+                    <span>边框宽度:</span>
+                    <input type="number" v-model.number="config.shape.stroke_width" />
+                  </label>
+                  <label>
+                    <span>是否填充:</span>
+                    <input type="checkbox" v-model="config.shape.is_fill" />
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
           <!--页面-->
@@ -328,8 +349,82 @@
                     {{book.basepages[currentPage.page_type].name}}
                   </label>
                 </div>
-              </div>
+                <div>
+                  <label>
+                    <span>页面大小:</span>
+                    {{Math.round(book.basepages[currentPage.page_type].width_px)}}px *
+                    {{Math.round(book.basepages[currentPage.page_type].height_px)}}px
+                  </label>
+                </div>
 
+              </div>
+              <p>图层</p>
+              <div class="group" style="overflow-y: scroll; max-height: 650px; padding-bottom: 0.2em;">
+
+                <div v-for="(element,index) in currentPage.elements" style="height: 30px; margin:0px -0.8em 0.2em; background-color: #2f2f2c; text-align: left; display: flex;">
+                  <div>
+                    <label class="label-image" v-bind:class="element.display?'label-display':'label-undisplay'">
+                      <input type="checkbox" v-model="element.display" style="visibility: hidden;" />
+                    </label>
+                  </div>
+                  <div>
+                    <label class="label-image" v-bind:class="element.fixed?'label-lock':'label-unlock'">
+                      <input type="checkbox" v-model="element.fixed" style="visibility: hidden;" />
+                    </label>
+                  </div>
+                  <div style="margin-left: 0.5em;">
+                    <svg height="30" v-bind:width="getSize(currentPage, 30).width" v-bind:view-box.camel="getSize(currentPage, 30).viewbox_value"
+                      style="background-color: white; cursor: pointer;" v-on:click="selectElement(index, false)">
+
+                      <g v-if="element.type === 'image' || element.type === 'decorate' || element.type === 'shape'"
+                        v-bind:transform="elementTransform(element)">
+                        <!--裁切路径-->
+                        <clipPath v-if="element.type === 'image' && element.shape !== 'rect'" v-bind:id="'clip'+index">
+                          <circle v-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
+                            v-bind:r="elementCircle(element).r" />
+                          <ellipse v-else-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx"
+                            v-bind:cy="elementEllipse(element).cy" v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" />
+                        </clipPath>
+                        <!--图片-->
+                        <image v-if="(element.type === 'image' || element.type === 'decorate') && element.image.url!=null"
+                          v-bind:x="element.x + element.image.translate_x" v-bind:y="element.y + element.image.translate_y"
+                          v-bind:width="element.width * element.image.width_scale" v-bind:height="element.height * element.image.height_scale"
+                          v-bind:href="element.image.url" v-bind:clip-path="element.shape!=='rect' ? 'url(#clip'+index+')' : ''"
+                          preserveAspectRatio="xMidYMid slice" />
+                        <!--图形-->
+                        <g v-if="element.type === 'shape' || element.type === 'image'">
+                          <rect v-if="element.shape==='rect'" v-bind:x="element.x" v-bind:y="element.y" v-bind:width="element.width"
+                            v-bind:height="element.height" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+                            v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
+                            v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity"
+                            v-bind:rx="element.rect.rx" v-bind:ry="element.rect.ry" />
+                          <circle v-else-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
+                            v-bind:r="elementCircle(element).r" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+                            v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
+                            v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" />
+                          <ellipse v-else-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx"
+                            v-bind:cy="elementEllipse(element).cy" v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry"
+                            v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+                            v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
+                            v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" />
+                        </g>
+                      </g>
+                      <g v-else-if="element.type === 'text'" v-bind:transform="elementTransform(element)">
+                        <!--文字-->
+                        <rect v-bind:x="element.x" v-bind:y="element.y" v-bind:width="element.width" v-bind:height="element.height"
+                          fill="none" stroke="red"></rect>
+                        <rect v-bind:x="element.text.drawBox.x" v-bind:y="element.text.drawBox.y" v-bind:width="element.text.drawBox.width"
+                          v-bind:height="element.text.drawBox.height" fill="none" stroke="green"></rect>
+                        <text v-for="(line,index) in element.text.lines" v-bind:x="line.x" v-bind:y="line.y"
+                          v-bind:font-family="element.text.fontFamily" v-bind:font-weight="element.text.fontWeight"
+                          v-bind:font-size="element.text.fontSize" v-bind:text-length.camel="line.stretch ? element.width : line.width"
+                          alignment-baseline="text-before-edge">{{line.text}}</text>
+                      </g>
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <!--元素-->
@@ -412,7 +507,7 @@
                 <div>
                   <label>
                     <span>颜色:</span>
-                    <input type="text" v-model.lazy="currentElement.stroke" v-on:click="pickColor('stroke')" v-bind:style="{'background-color': currentElement.stroke}"/>
+                    <input type="color" v-model.lazy="currentElement.stroke" />
                   </label>
                 </div>
                 <div>
@@ -439,7 +534,7 @@
                 <div>
                   <label>
                     <span>颜色:</span>
-                    <input type="text" v-model.lazy="currentElement.fill" v-on:click="pickColor('fill')" v-bind:style="{'background-color': currentElement.fill}"/>
+                    <input type="color" v-model.lazy="currentElement.fill" />
                   </label>
                 </div>
                 <div>
@@ -450,7 +545,9 @@
                 </div>
               </div>
               <p>图片</p>
-              <button v-on:click="addImage()">添加图片</button>
+              <!-- <button v-on:click="addImage()">添加图片</button> -->
+              <button v-on:click="showUploadPanel()">上传图片</button>
+              <button v-on:click="showSelectImagePanel()">选择图片</button>
               <div class="group" v-if="currentElement.image!=null">
                 <div>
                   <label>
@@ -676,9 +773,25 @@
           <button class="button" v-on:click="createBook()">确定</button>
         </div>
       </div>
+      
+      <!--图片上传-->
+      <div id="uploadPanel" style="display: none; padding: 1rem;">
+        <div>
+          <input type="file" name="photos" id="files" accept="image/*" multiple="multiple" v-on:change="uploadChanged()"/>
+          <button class="button" type="button" v-on:click="upload()">确定</button>{{uploaded}}/{{fileImages.length}}
+        </div>
+        <div style="margin-top: 0.5em;">
+          <img v-for="(value,index) in fileImages" v-bind:src="value.url" height="100px" style="margin-right: 2px;"/>
+        </div>
+      </div>
+      
+      <!--选择图片-->
+      <div id="selectImagePanel" style="display: none; padding: 1rem;">
+        <div style="margin-top: 0.5em;">
+          <img v-for="(value,index) in images" v-bind:src="value.url" height="100px" style="margin-right: 2px; cursor: pointer;" v-on:click="selectImage(value)"/>
+        </div>
+      </div>
 
-      <!--颜色采集器-->
-      <div id="picker" style="display: none;"></div>
       <!--手机端查看弹出层-->
       <div id="qrcodePanel" style="padding: 1rem; display: none; text-align: center;"></div>
     </div>
@@ -688,8 +801,6 @@
     <script src="./lib/layer/layer.js"></script>
     <script src="./lib/d3.v3.js"></script>
     <script src="./lib/vue.js"></script>
-    <!-- <script src="./lib/jscolor.js"></script> -->
-    <script src="./lib/color-picker.js"></script>
     <script src="./js/unit.js"></script>
     <script src="./js/textbox.js"></script>
     <script src="./js/editor-config.js"></script>

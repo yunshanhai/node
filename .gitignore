@@ -1,5 +1,6 @@
 book/node_modules
 book/public/x10
+book/public/upload
 express_learn/node_modules
 expressdemo/node_modules
 mysqltest/node_modules

@@ -40,6 +40,8 @@ app.use(bodyParser.json());
 获取表单数据
 req.body.xxx
 
+body-parser只能解析普通数据，不能解析上传的文件
+
 11.安装cookie-parser：npm install cookie-parser --save
 
 12.安装session: npm install express-session --save

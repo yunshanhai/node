@@ -211,7 +211,7 @@ body {
   line-height: 1.5rem;
 }
 
-.sidebar_right .group input[type=text],input[type=number]{
+.sidebar_right .group input[type=text],input[type=number],input[type=color]{
   width: 118px;
   display: inline-block;
 }
@@ -220,6 +220,29 @@ body {
   width: 118px;
 }
 
+.label-image{
+  background-repeat: no-repeat;
+  width: 30px;
+  height: 30px !important;
+  display: inline-block;
+  cursor: pointer;
+}
+.label-display{
+  background-image: url('../images/icon/display.svg');
+  background-size: 30px 30px;
+}
+.label-undisplay{
+  background-image: url('../images/icon/undisplay.svg');
+  background-size: 30px 30px;
+}
+.label-lock{
+  background-image: url('../images/icon/lock.png');
+  background-size: 30px 30px;
+}
+.label-unlock{
+  background-image: url('../images/icon/unlock.png');
+  background-size: 30px 30px;
+}
 
 
 #pagesContainer{
