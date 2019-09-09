@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>易书排版引擎</title>
+    <title>照片书3.0排版引擎</title>
     <link rel="stylesheet" href="./css/editor.css" />
     <style>
       [v-cloak]{ display: none; }
@@ -129,7 +129,7 @@
                     <image v-if="(element.type === 'image' || element.type === 'decorate') && element.image.url!=null"
                       v-bind:x="element.x + element.image.translate_x" v-bind:y="element.y + element.image.translate_y"
                       v-bind:width="element.width * element.image.width_scale" v-bind:height="element.height * element.image.height_scale"
-                      v-bind:href="element.image.url" v-bind:clip-path="element.shape!=='rect' ? 'url(#clip'+index+')' : ''"
+                      v-bind:href="element.image.url|url_format('m')" v-bind:clip-path="element.shape!=='rect' ? 'url(#clip'+index+')' : ''"
                       preserveAspectRatio="xMidYMid slice" />
                     <!--图形-->
                     <g v-if="element.type === 'shape' || element.type === 'image'">
@@ -242,13 +242,16 @@
       <div class="sidebar_right">
         <div class="menus">
           <div class="menu" style="border-right:solid 1px #202020;">
-            <div class="menu_title" v-bind:class="{'menu_title_click': rightPanelIndex === 0}" v-on:click="selectedRightPanel(0)">设计</div>
+            <div class="menu_title" v-bind:class="{'menu_title_click': rightPanelIndex === 0}" v-on:click="selectedRightPanel(0)">书籍</div>
           </div>
           <div class="menu" style="border-right:solid 1px #202020;">
             <div class="menu_title" v-bind:class="{'menu_title_click': rightPanelIndex === 1}" v-on:click="selectedRightPanel(1)">页面</div>
           </div>
-          <div class="menu">
+          <div class="menu" style="border-right:solid 1px #202020;">
             <div class="menu_title" v-bind:class="{'menu_title_click': rightPanelIndex === 2}" v-on:click="selectedRightPanel(2)">元素</div>
+          </div>
+          <div class="menu">
+            <div class="menu_title" v-bind:class="{'menu_title_click': rightPanelIndex === 3}" v-on:click="selectedRightPanel(3)">设计</div>
           </div>
         </div>
         <div>
@@ -308,28 +311,6 @@
                   </label>
                 </div>
               </div>
-
-              <p>主题信息</p>
-              <div class="group">
-                <div>
-                  <label>
-                    <span>主题颜色:</span>
-                    <input type="color" v-model="config.shape.color" />
-                  </label>
-                  <label>
-                    <span>显示边框:</span>
-                    <input type="checkbox" v-model="config.shape.is_stroke" />
-                  </label>
-                  <label>
-                    <span>边框宽度:</span>
-                    <input type="number" v-model.number="config.shape.stroke_width" />
-                  </label>
-                  <label>
-                    <span>是否填充:</span>
-                    <input type="checkbox" v-model="config.shape.is_fill" />
-                  </label>
-                </div>
-              </div>
             </div>
           </div>
           <!--页面-->
@@ -339,8 +320,10 @@
               <div class="group">
                 <div>
                   <label>
-                    <span>背景图片:</span>
-                    <input type="text" v-model.lazy="currentPage.background.image" />
+                    <span>背景:</span>
+                    <button v-on:click="showSelectImagePanel('background')" class="button1">选择</button>
+                    <button v-on:click="showUploadPanel()" class="button1">上传</button>
+                    <!-- <input type="text" v-model.lazy="currentPage.background.image" /> -->
                   </label>
                 </div>
                 <div>
@@ -546,13 +529,21 @@
               </div>
               <p>图片</p>
               <!-- <button v-on:click="addImage()">添加图片</button> -->
-              <button v-on:click="showUploadPanel()">上传图片</button>
-              <button v-on:click="showSelectImagePanel()">选择图片</button>
+              <div class="group" v-if="currentElement.image==null">
+                <div>
+                  <label>
+                    <span>图片：</span>
+                    <button v-on:click="showSelectImagePanel('element')">选择</button>
+                    <button v-on:click="showUploadPanel()">上传</button>
+                  </label>
+                </div>
+              </div>
               <div class="group" v-if="currentElement.image!=null">
                 <div>
                   <label>
-                    <span>路径：</span>
-                    <input type="text" v-model.lazy="currentElement.image.url" />
+                    <span>图片：</span>
+                    <button v-on:click="showSelectImagePanel('element')">选择</button>
+                    <button v-on:click="showUploadPanel()">上传</button>
                   </label>
                 </div>
                 <div>
@@ -602,6 +593,30 @@
               </div>
             </div>
           </div>
+          <!--设计-->
+          <div v-show="rightPanelIndex===3">
+            <p>主题信息</p>
+            <div class="group">
+              <div>
+                <label>
+                  <span>主题颜色:</span>
+                  <input type="color" v-model="config.shape.color" />
+                </label>
+                <label>
+                  <span>显示边框:</span>
+                  <input type="checkbox" v-model="config.shape.is_stroke" />
+                </label>
+                <label>
+                  <span>边框宽度:</span>
+                  <input type="number" v-model.number="config.shape.stroke_width" />
+                </label>
+                <label>
+                  <span>是否填充:</span>
+                  <input type="checkbox" v-model="config.shape.is_fill" />
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -613,7 +628,7 @@
               <!--图片背景 直接设置在svg上-->
               <!-- <rect v-bind:width="book.basepages[page.page_type].width_px" v-bind:height="book.basepages[page.page_type].height_px" fill="white"/> -->
               <!--图片背景-->
-              <image v-bind:href="page.background.image" v-bind:width="book.basepages[page.page_type].width_px"
+              <image v-bind:href="page.background.image|url_format('m')" v-bind:width="book.basepages[page.page_type].width_px"
                 v-bind:height="book.basepages[page.page_type].height_px" preserveAspectRatio="xMidYMid slice" />
               <!--页面元素-->
               <g v-for="(element, index) in page.elements" v-show="element.display" v-bind:transform="elementTransform(element)">
@@ -627,7 +642,7 @@
                 <!--图片-->
                 <image v-if="element.type==='image' && element.image.url!=null" v-bind:x="element.x + element.image.translate_x"
                   v-bind:y="element.y + element.image.translate_y" v-bind:width="element.width * element.image.width_scale"
-                  v-bind:height="element.height * element.image.height_scale" v-bind:href="element.image.url"
+                  v-bind:height="element.height * element.image.height_scale" v-bind:href="element.image.url|url_format('s')"
                   v-bind:clip-path="element.shape!=='rect' ? 'url(#clip_' + pageIndex + '_' + index + ')' : ''"
                   preserveAspectRatio="xMidYMid slice" />
                 <!--边框-->
@@ -773,22 +788,26 @@
           <button class="button" v-on:click="createBook()">确定</button>
         </div>
       </div>
-      
+
       <!--图片上传-->
       <div id="uploadPanel" style="display: none; padding: 1rem;">
         <div>
-          <input type="file" name="photos" id="files" accept="image/*" multiple="multiple" v-on:change="uploadChanged()"/>
+          <input type="file" name="photos" id="files" accept="image/*" multiple="multiple" v-on:change="uploadChanged()" />
           <button class="button" type="button" v-on:click="upload()">确定</button>{{uploaded}}/{{fileImages.length}}
         </div>
         <div style="margin-top: 0.5em;">
-          <img v-for="(value,index) in fileImages" v-bind:src="value.url" height="100px" style="margin-right: 2px;"/>
+          <img v-for="(value,index) in fileImages" v-bind:src="value.url" height="100px" style="margin-right: 2px;" />
         </div>
       </div>
-      
+
       <!--选择图片-->
       <div id="selectImagePanel" style="display: none; padding: 1rem;">
+        <div>
+          <label><input type="checkbox" v-model="config.closeWhenSelected" /> 选择图片后关闭窗口</label>
+        </div>
         <div style="margin-top: 0.5em;">
-          <img v-for="(value,index) in images" v-bind:src="value.url" height="100px" style="margin-right: 2px; cursor: pointer;" v-on:click="selectImage(value)"/>
+          <img v-for="(value,index) in images" v-bind:src="value.url|url_format('s')" height="100px" style="margin-right: 2px; cursor: pointer; border: solid 1px lightgray;"
+            v-on:click="selectImage(value)" />
         </div>
       </div>
 

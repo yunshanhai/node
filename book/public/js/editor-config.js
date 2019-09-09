@@ -24,7 +24,7 @@ var config = {
     stroke_width: 1,
     is_fill: true
   },
-  themeColor: '#f2a9ba'
+  themeColor: '#f2a9ba',
   // containerWidth: 600
-  
+  closeWhenSelected: true
 }

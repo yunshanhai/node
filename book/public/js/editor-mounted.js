@@ -19,7 +19,7 @@ let mounted = function() {
   
   let that = this;
   
-  //选择层
+  //选择层和创建图形
   let dragSelectCount = 0;
   let startX = 0;
   let startY = 0;
@@ -78,6 +78,7 @@ let mounted = function() {
           that.currentPage.elements.pop(that.lastElement);
         }else{
           that.currentElementIndex = that.lastElementIndex;
+          that.rightPanelIndex = 2;
         }
       }
       

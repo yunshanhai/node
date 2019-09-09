@@ -3,6 +3,7 @@ var fs = require('fs');
 var path = require('path');
 var multer = require('multer');
 var db = require('../data/db');
+var images = require('images');
 
 var router = express.Router();
 var upload = multer({dest: './public/upload/'})
@@ -18,12 +19,39 @@ router.post('/image', upload.single('photos'), (req, res) => {
   //   size: 697283 }
   
   let pathObj = path.parse(req.file.originalname);
+  const movedir = './public/upload/'+req.body.book_id + '/'
+  const movepath = movedir + req.file.filename + pathObj.ext
+  
+  //书籍目录不存在则创建
+  if(!fs.existsSync(movedir)){
+    fs.mkdirSync(movedir);
+  }
+  
   async function run(){
     await new Promise((resolve, reject)=>{
-      fs.rename(req.file.path, req.file.path + pathObj.ext, function(err){
+      
+      fs.rename(req.file.path, movepath, function(err){
         if(err){
           reject('重命名失败');
         }
+        
+        //生成缩略图
+        images(movepath)
+          .size(200)
+          .save(movedir + req.file.filename + '_s' + pathObj.ext, {
+            quality:60
+          });
+        images(movepath)
+          .size(600)
+          .save(movedir + req.file.filename + '_m' + pathObj.ext, {
+            quality:50
+          });
+        images(movepath)
+          .size(1280)
+          .save(movedir + req.file.filename + '_l' + pathObj.ext, {
+            quality:50
+          });
+        
         resolve();
       });
     });
@@ -32,7 +60,7 @@ router.post('/image', upload.single('photos'), (req, res) => {
     if(name.length>32){
       name = name.substr(0,32);
     }
-    let url = '/upload/' + req.file.filename + pathObj.ext;
+    let url = `/upload/${req.body.book_id}/${req.file.filename + pathObj.ext}`; 
     
     let result = await new Promise((resolve, reject) => {
       $sql = `insert into images (url,name,mime,size,width,height,book_id,user_id)

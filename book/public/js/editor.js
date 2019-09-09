@@ -75,7 +75,8 @@ var data = {
   pickColorFlag: null,
   fileImages: [],
   uploaded: 0,
-  images: []
+  images: [],
+  selectImageType: null
 };
 var app;
 
@@ -880,31 +881,41 @@ if(id!=null){
             content: $('#uploadPanel')
           });
         },
-        showSelectImagePanel: function(){
+        showSelectImagePanel: function(type){
+          this.selectImageType = type;
+          
           this.createPagePanelLayerIndex = layer.open({
             title: "选择图片",
             type: 1,
             skin: 'layui-layer-rim', //加上边框
-            // area: '520px', //宽高
+            offset: 'rt',
+            area: '520px', //宽高
             shadeClose: true,
             content: $('#selectImagePanel')
           });
         },
         selectImage: function(image){
-          if(this.currentElement.type == 'image'){
-            this.currentElement.image.url = image.url;
-          }else{
-            this.currentElement.type = 'image';
-            this.currentElement.is_fill = false;
-            this.currentElement.image = {
-              translate_x: 0,
-              translate_y: 0,
-              width_scale: 1,
-              height_scale: 1,
-              url: image.url
+          if(this.selectImageType == 'element'){
+            if(this.currentElement.type == 'image'){
+              this.currentElement.image.url = image.url;
+            }else{
+              this.currentElement.type = 'image';
+              this.currentElement.is_fill = false;
+              this.currentElement.image = {
+                translate_x: 0,
+                translate_y: 0,
+                width_scale: 1,
+                height_scale: 1,
+                url: image.url
+              }
             }
+          }else{
+            this.currentPage.background.image = image.url;
           }
           
+          if(this.config.closeWhenSelected){
+            layer.close(this.createPagePanelLayerIndex);
+          }
         },
         selectedRightPanel: function(index){
           this.rightPanelIndex = index;
@@ -955,7 +966,28 @@ if(id!=null){
         }
       },
       filters: {
-        
+        url_s: function(url){
+          if(url.startsWith('/upload/')){
+            let index = url.lastIndexOf('.');
+            return url.substr(0,index) + '_s' + url.substr(index);
+          }
+          return url;
+        },
+        url_m: function(url){
+          if(url.startsWith('/upload/')){
+            let index = url.lastIndexOf('.');
+            return url.substr(0,index) + '_m' + url.substr(index);
+          }
+          return url;
+        },
+        url_format: function(url, type){
+          if(['s', 'm', 'l'].includes(type) && url.startsWith('/upload/')){
+            let index = url.lastIndexOf('.');
+            return url.substr(0,index) + '_' + type + url.substr(index);
+          }
+          
+          return url;
+        }
       }
     })
     // initBook(book)
