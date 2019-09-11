@@ -227,26 +227,25 @@ body {
 
 .label-image{
   background-repeat: no-repeat;
-  width: 30px;
+  width: 31px;
   height: 30px !important;
   display: inline-block;
   cursor: pointer;
+  background-size: 16px 16px;
+  background-position: center;
+  border-right: solid 1px #3f3f3c;
 }
 .label-display{
   background-image: url('../images/icon/display.svg');
-  background-size: 30px 30px;
 }
 .label-undisplay{
-  background-image: url('../images/icon/undisplay.svg');
-  background-size: 30px 30px;
+  /* background-image: url('../images/icon/undisplay.svg'); */
 }
 .label-lock{
-  background-image: url('../images/icon/lock.png');
-  background-size: 30px 30px;
+  background-image: url('../images/icon/lock.svg');
 }
 .label-unlock{
-  background-image: url('../images/icon/unlock.png');
-  background-size: 30px 30px;
+  /* background-image: url('../images/icon/unlock.svg'); */
 }
 
 

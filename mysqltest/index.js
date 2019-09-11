@@ -118,42 +118,52 @@ let db = mysql.createPool({host: 'localhost', user: 'root', password: 'root', da
 
 // async and await--------------------------------------------------------------
 
-let promise1 = new Promise((resolve, reject) => {
-    db.query('select * from books', (err, result) => {
-      if(err){
-        reject(err);
-      }
-      resolve(result);
-    });
-  });
+// let promise1 = new Promise((resolve, reject) => {
+//     db.query('select * from books', (err, result) => {
+//       if(err){
+//         reject(err);
+//       }
+//       resolve(result);
+//     });
+//   });
+// 
+// let promise2 = new Promise((resolve, reject) => {
+//     db.query('select * from books', (err, result) => {
+//       // if(err){
+//       //   reject(err);
+//       // }
+//       reject('假装失败了')
+//       // resolve(result);
+//     })
+//   });
+// 
+// async function getData(){
+//   console.log('1111111111111');
+//   let books = await promise1;
+//   console.log(books);
+//   console.log('22222222222222222222');
+//   let books2 = await promise2;
+//   console.log(books2 + '123333');
+//   console.log('3333333333333333333');
+//   return [books, books2];
+// }
+// 
+// let result = getData();
+// 
+// result.then((resolve)=>{
+//   console.log(resolve);
+// })
+// .catch((err)=>{
+//   console.log(err+'aaaa');
+// })
+// console.log('执行完毕');
 
-let promise2 = new Promise((resolve, reject) => {
-    db.query('select * from books', (err, result) => {
-      // if(err){
-      //   reject(err);
-      // }
-      reject('假装失败了')
-      // resolve(result);
-    })
-  });
-
-async function getData(){
-  console.log('1111111111111');
-  let books = await promise1;
-  console.log(books);
-  console.log('22222222222222222222');
-  let books2 = await promise2;
-  console.log(books2 + '123333');
-  console.log('3333333333333333333');
-  return [books, books2];
-}
-
-let result = getData();
-
-result.then((resolve)=>{
-  console.log(resolve);
-})
-.catch((err)=>{
-  console.log(err+'aaaa');
-})
-console.log('执行完毕');
+//--------------------------------------------------------------------------------
+db.query('select * from basebooks where id=?', 0, (err,result)=>{
+  if(result){
+    console.log(result);
+  }else{
+    console.log('bucunzai')
+  }
+  
+});

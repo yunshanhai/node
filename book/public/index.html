@@ -344,7 +344,7 @@
               <p>图层</p>
               <div class="group" style="overflow-y: scroll; max-height: 650px; padding-bottom: 0.2em;">
 
-                <div v-for="(element,index) in currentPage.elements" style="height: 30px; margin:0px -0.8em 0.2em; background-color: #2f2f2c; text-align: left; display: flex;">
+                <div v-for="(element,index) in currentPage.elements" style="height: 30px; margin:0px -11px 1px; background-color: #2f2f2c; text-align: left; display: flex;">
                   <div>
                     <label class="label-image" v-bind:class="element.display?'label-display':'label-undisplay'">
                       <input type="checkbox" v-model="element.display" style="visibility: hidden;" />
