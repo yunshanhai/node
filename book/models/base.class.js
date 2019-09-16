@@ -1,6 +1,6 @@
 class BaseClass{
-  constructor(tableName, pk) {
-      this.tableName = tableName;
+  constructor(table, pk) {
+      this.table = table;
       this.pk = pk;
       
       this.db = require('../data/db');
@@ -17,9 +17,21 @@ class BaseClass{
     });
   }
   
-  findByPK(id){
+  all(){
     return new Promise((resolve, reject)=>{
-      this.db.query(`select * from ${this.tableName} where ${this.pk}=?`, id, (err, rows)=>{
+      this.db.query(`select * from ${this.table}`, (err, rows)=>{
+        if(err){
+          reject(err);
+        }
+        
+        resolve(rows);
+      });
+    });
+  }
+  
+  find(id){
+    return new Promise((resolve, reject)=>{
+      this.db.query(`select * from ${this.table} where ${this.pk}=?`, id, (err, rows)=>{
         if(err){
           reject(err);
         }

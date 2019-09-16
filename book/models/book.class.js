@@ -1,7 +1,7 @@
 const BaseClass = require('./base.class');
 const Page = require('./page.class');
 const Basepage = require('./basepage.class');
-const Basebinding = require('./basebinding.class');
+const Basepage2 = require('./basepage2.class');
 
 class Book extends BaseClass{
   constructor(){
@@ -9,9 +9,8 @@ class Book extends BaseClass{
   }
   
   async getBook(id){
-    let book = await this.findByPK(id);
+    let book = await this.find(id);
     if(book){
-      
       let basepage = new Basepage();
       let basepages = await basepage.getBasepagesByBasebookId(book.basebook_id);
       book.basepages = {};
@@ -21,8 +20,8 @@ class Book extends BaseClass{
         book.basepages[basepage.page_type] = basepage;
       }
       
-      let basebinding = new Basebinding();
-      book.basebinding = basebinding.findByPK(book.basebinding_id);
+      let basepage2 = new Basepage2();
+      book.basepage2 = basepage2.all();
       
       let page = new Page();
       let pages = await page.getPagesByBookId(book.id);

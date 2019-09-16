@@ -3,41 +3,59 @@ var bodyParser = require('body-parser');
 var router = express.Router();
 var dataBook = require('../data/book');
 var db = require('../data/db');
+const Book = require('../models/book.class');
+let Page = require('../models/page.class');
+const Basepage = require('../models/basepage.class');
+const Basebook = require('../models/basebook.class');
+const bookConfig = require('../config/book');
+
 
 /**
  * url /book/0
  * 获取书籍信息
  */
-router.get('/:id', function(req, res, next) {
+router.get('/:id', async function(req, res, next) {
   var book_id = req.params.id;
-  dataBook.getBookById(book_id, function(books){
-    if(books.length>0){
-      let book = books[0];
-      book.basepages = {};
-      dataBook.getBasepages(book.basebook_id, function(basepages){
-        for(let i in basepages){
-          basepage = basepages[i];
-          // pagetype.total_page = 0;
-          book.basepages[basepage.page_type] = basepage;
-        }
-        
-        dataBook.getPages(book_id, function(pages){
-          book.pages = pages;
-          res.send({
-            statusCode: 200,
-            message: 'ok',
-            data: book
-          });
-        });
-        
-      });
-    }else{
-      res.send({
-        statusCode: 404,
-        message: '404 Not Found'
-      });
+  
+  const bookModel = new Book();
+  let book = await bookModel.find(book_id);
+  if(book){
+    
+    const basebookModel = new Basebook();
+    let basebook = await basebookModel.find(book.basebook_id);
+    book.basebook = basebook;
+    // book.basebook.spine_widths = bookConfig.spine_widths;
+    // book.basebook.spine_base_width = bookConfig.spine_base_width;
+    book.crafts = bookConfig.getCraftsByIsCrosspage(basebook.double_page);
+    
+    const basepageModel = new Basepage();
+    let basepages = await basepageModel.getBasepagesByBasebookId(book.basebook_id);
+    book.basepages = {};
+    for(let i in basepages){
+      let basepage = basepages[i];
+      // pagetype.total_page = 0;
+      book.basepages[basepage.page_type] = basepage;
     }
-  });
+    
+    const pageModel = new Page();
+    let page = new Page();
+    let pages = await pageModel.getPagesByBookId(book.id);
+    book.pages = pages;
+    
+    res.send({
+      statusCode: 200,
+      message: 'ok',
+      data: book
+    });
+    
+  }else{
+    
+    res.send({
+      statusCode: 404,
+      message: '404 Not Found'
+    });
+    
+  }
 });
 
 /**

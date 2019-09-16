@@ -141,3 +141,43 @@ function checkElement(elements){
     // }
   }
 }
+
+// function calcPageSize(page, basebook, pageCount){
+//   let size = {
+//     width: 0,
+//     height: 0
+//   };
+//   
+//   switch(page.page_type){
+//     case 0:
+//       //护封
+//       if(basebook.has_spine){
+//         if(basebook.spine_mode===0){
+//           //只根据内页计算
+//           size.width = basebook.width + basebook.jacket_ext_width + ;
+//         }
+//         
+//       }
+//       
+//       break;
+//     case 1:
+//       //封面
+//       // page.width = book.basebook.
+//       break;
+//     case 2:
+//       //内页，如果不重写就从basebook继承，如果重写就用自己的
+//       if(page.rerite_size===1){
+//         size.width = page.width;
+//         size.height = page.height;
+//       }else{
+//         size.width = basebook.width;
+//         size.height = basebook.height;
+//       }
+//       break;
+//     case 3:
+//       //自定义页
+//       size.width = page.width;
+//       size.height = page.height;
+//       break;
+//   }
+// }
