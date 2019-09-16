@@ -25,6 +25,36 @@ function createElement(){
   return element;
 }
 
+function createTextElement(){
+  let element = {
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    // shape: 'rect',
+    type: 'text',
+    angle: 0,
+    text: {
+      content: 0,
+      mode: layer.property.textModel,//text|label
+      fontSize: px2px(layer.property.size * layer.property.scaleX, 72, 300),
+      lineHeight: layer.property.lineHeight,
+      fontFamily: layer.property.font,
+      color: layer.property.color,
+      fontWeight: layer.property.bold,
+      letterSpacing: layer.property.charSpacing,
+      fontStyle: layer.property.italic ? 'italic' : 'normal',
+      textDecoration: layer.property.underline ? 'underline' : 'none',
+      align: layer.property.align,
+      scaleX: layer.property.scaleX,
+      scaleY: layer.property.scaleY
+    },
+    display: layer.visible,
+    fixed: layer.location.fixed == 'false' ? false : true,
+    sort: layer.index
+  }
+}
+
 function addImage(element){
   element.type = 'image';
   element.is_fill = false;

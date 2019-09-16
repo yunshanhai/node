@@ -1,47 +1,96 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<title></title>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
     <style type="text/css">
-      .label{
-          background-image: url('./images/icon/display.svg');
-          background-repeat: no-repeat;
-          width: 30px;
-          height: 30px;
-          visibility: visible;
-          display: inline-block;
+      /* body{background-color: #fbbc46;} */
+      .png-test {}
+
+      .png-test:hover {
+        filter: drop-shadow(0px 0px 5px #fbbc46);
       }
-      .label2{
-          background-image: url('./images/icon/unlock.svg');
-          background-repeat: no-repeat;
-          background-size: 60px 60px;
-          width: 60px;
-          height: 60px;
-          visibility: visible;
-          display: inline-block;
+
+      .text-test {}
+
+      .text-test:hover {
+        filter: drop-shadow(5px 5px 5px #fbbc46);
       }
     </style>
-	</head>
-	<body>
-    <input type="color" value="#00ff00" name="color" id="color"/>
-    <label class="label"></label>
-     <label class="label2"></label>
-    <input type="checkbox" />
-    <input id="photos" type="file" accept="image/png,image/gif,image/jpeg" multiple="multiple"/>
-    <img id="img1" width="200px" />
+  </head>
+  <body>
+    <div id="app">
+      <svg width="300" height="300" style="background: steelblue;">
+        <text id="txt" x="20" y="20" @click="input()">
+          <tspan x="20" v-for="(value,index) in splitValue(value)" v-bind:dy="index>0?'1em':'0em'">
+            {{value}}
+          </tspan>
+        </text>
+      </svg>
+      <textarea id="txtArea" v-model="value" style="width:0px; height:0px; resize: none; padding: 0px; border: none;"></textarea>
+      <input id="input" type="text" />
+      <button @click="test()">啦啦啦</button>
+      <img src="./images/55f4965a8c9af2dff150327d7d48ac8c.png" class="png-test" />
+      <div id="source" style="width:100px; height: 100px; background: url(images/55f4965a8c9af2dff150327d7d48ac8c.png) no-repeat center; background-size: contain;" draggable="true">
+
+      </div>
+
+      <div id="target" style="width: 100px; height: 100px; background-color: #000000;" class="png-test" draggable="true"></div>
+      <p class="text-test" style="font-size: 80pt; font-weight: bold;">你好吗</p>
+    </div>
+
+    <script src="./lib/vue.js"></script>
     <script>
-      function getObjectURL(file) {
-          var url = null ;
-          if (window.createObjectURL!=undefined) { // basic
-              url = window.createObjectURL(file) ;
-          } else if (window.URL!=undefined) { // mozilla(firefox)
-              url = window.URL.createObjectURL(file) ;
-          } else if (window.webkitURL!=undefined) { // webkit or chrome
-              url = window.webkitURL.createObjectURL(file) ;
+      var app = new Vue({
+        el: '#app',
+        data: {
+          value: '你好啊'
+        },
+        methods: {
+          input: function() {
+            document.getElementById('txtArea').focus();
+            console.log(event);
+          },
+          test: function() {
+            document.getElementById('input').value = "你好啊啊啊啊啊啊";
+            document.getElementById('input').focus();
+            document.getElementById('input').selectionStart = 3;
+            document.getElementById('input').selectionEnd = 3;
+          },
+          splitValue: function(value) {
+
+            return value.split('\n');
           }
-          return url ;
-      }
+        }
+      });
+      
+      window.onload = function(){
+                  var source = document.getElementById('source');
+                  var target = document.getElementById('target');
+                  source.ondragstart = function(event){
+                      var e = event || window.event
+                      console.log('开始拖拽');
+                      e.dataTransfer.setData('text',e.target.id);
+                  }
+                      target.ondragenter = function(){
+                          console.log('进入目标元素')
+                      }
+                      target.ondragover = function(event){
+                          var event = event || window.event;
+                          console.log('在目标元素中拖拽');
+                          event.preventDefault()
+                      }
+                      target.ondragleave = function(){
+                          console.log('拖放离开目标元素')
+                      }
+                      target.ondrop = function(event){
+                          console.log('拖放');
+                          var e = event || window.event
+                          var data = e.dataTransfer.getData('text');
+                          e.target.appendChild(document.getElementById(data));
+       
+                      }
+              }
     </script>
   </body>
 </html>

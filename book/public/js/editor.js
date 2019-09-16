@@ -872,18 +872,23 @@ if(id!=null){
         //   addImage(this.currentElement);
         // },
         showUploadPanel: function(){
+          //清空之前的选择
+          this.fileImages.splice(0,this.fileImages.length);
+          document.getElementById('files').value="";
+          this.uploaded = 0;
+          
           this.createPagePanelLayerIndex = layer.open({
             title: "上传图片",
             type: 1,
             skin: 'layui-layer-rim', //加上边框
-            // area: '520px', //宽高
+            offset: 't',
+            area: '800px', //宽高
             shadeClose: true,
             content: $('#uploadPanel')
           });
         },
         showSelectImagePanel: function(type){
           this.selectImageType = type;
-          
           this.createPagePanelLayerIndex = layer.open({
             title: "选择图片",
             type: 1,
@@ -936,9 +941,13 @@ if(id!=null){
           }
         },
         upload: function(){
+          
           this.uploaded = 0;
           let input = document.getElementById('files');
           if(input.files.length>0){
+            let srcElement = event.srcElement;
+            srcElement.disabled = 'true';
+            
             for(let i=0; i<input.files.length; i++){
               let formData = new FormData();
               formData.append('photos', input.files[i]);
@@ -955,6 +964,12 @@ if(id!=null){
                       if(result.statusCode == 200){
                         app.images.push(result.data);
                         app.uploaded++;
+                        app.fileImages[result.index].status=1;
+                        if(app.uploaded == input.files.length){
+                          input.value = '';
+                          layer.msg('全部图片已经上传成功！');
+                          srcElement.removeAttribute('disabled');
+                        }
                       }
                   },
                   error: function (XMLHttpRequest, textStatus, errorThrown) {
@@ -962,6 +977,8 @@ if(id!=null){
                   }
               });
             }
+          }else{
+            layer.msg('请选择上传文件');
           }
         }
       },

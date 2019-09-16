@@ -222,7 +222,7 @@
             <!--选择框-->
             <g v-show="currentSelectedTools!=='pointer'">
               <rect id="selectPanel" v-bind:x="currentPageSize.viewbox_x" y="0" v-bind:width="currentPageSize.viewbox_width"
-                v-bind:height="currentPageSize.viewbox_height" fill="red" fill-opacity="0" style="cursor:crosshair;" />
+                v-bind:height="currentPageSize.viewbox_height" fill="red" fill-opacity="0" v-bind:class="[currentSelectedTools=='text'?'text':'crosshair']"/>
               <rect id="select" v-bind:x="selectObj.x" v-bind:y="selectObj.y" v-bind:width="selectObj.width"
                 v-bind:height="selectObj.height" stroke="#666" stroke-width="3" stroke-dasharray="18,12" fill="rgb(22,145,232)"
                 fill-opacity="0.1" v-show="currentSelectedTools==='select'" />
@@ -344,7 +344,7 @@
               <p>图层</p>
               <div class="group" style="overflow-y: scroll; max-height: 650px; padding-bottom: 0.2em;">
 
-                <div v-for="(element,index) in currentPage.elements" style="height: 30px; margin:0px -0.8em 0.2em; background-color: #2f2f2c; text-align: left; display: flex;">
+                <div v-for="(element,index) in currentPage.elements" style="height: 30px; margin:0px -11px 1px; background-color: #2f2f2c; text-align: left; display: flex;">
                   <div>
                     <label class="label-image" v-bind:class="element.display?'label-display':'label-undisplay'">
                       <input type="checkbox" v-model="element.display" style="visibility: hidden;" />
@@ -795,8 +795,13 @@
           <input type="file" name="photos" id="files" accept="image/*" multiple="multiple" v-on:change="uploadChanged()" />
           <button class="button" type="button" v-on:click="upload()">确定</button>{{uploaded}}/{{fileImages.length}}
         </div>
-        <div style="margin-top: 0.5em;">
-          <img v-for="(value,index) in fileImages" v-bind:src="value.url" height="100px" style="margin-right: 2px;" />
+        <div style="margin-top: 0.5em; clear: both; overflow: hidden;">
+          <div v-for="(value,index) in fileImages" style="position: relative; float: left; border: solid 1px lightgray; margin-right: 2px; margin-bottom: 2px;">
+            <img v-bind:src="value.url" height="100px" style="margin-right: 2px;" />
+            <svg width="16" height="16"  style="position: absolute; right: 0.5rem; bottom: 0.5rem;" v-if="value.status==1">
+              <circle cx="8" cy="8" r="8" fill="lightgreen"></circle>
+            </svg>
+          </div>
         </div>
       </div>
 

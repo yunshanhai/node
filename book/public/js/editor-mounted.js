@@ -86,6 +86,7 @@ let mounted = function() {
     });
   d3.select('#selectPanel')
     .on('click', function(){
+      
       event.stopPropagation();
     })
     .call(dragSelectPanel);
