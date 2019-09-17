@@ -49,6 +49,7 @@ const crafts = [{
     is_crosspage: 0, //跨页不可选，单页可选
     has_spine: 1, //有书脊
     spine_base_width: 12, //书脊最少宽度，低于此宽度不在书脊上显示内容
+	spineWidths: null, //书脊宽度区间
     other_thickness: 0, //其他容差厚度
     papers: [tbz_128g, tzz_128g], //可选纸张类型
     has_jacket: 0, //不能有护封
@@ -63,7 +64,8 @@ const crafts = [{
     is_crosspage: 0, //跨页不可选，单页可选
     has_spine: 1, //有书脊
     spine_base_width: 12, //书脊最少宽度，低于此宽度不在书脊上显示内容
-    other_thickness: 0, //其他容差厚度
+	spineWidths: [12, 24, 36], //书脊宽度区间，超过最大值则按实际计算
+    other_thickness: 5, //其他容差厚度：硬壳厚度*2 + 其他容差
     papers: [tbz_128g, tzz_128g, tbz_200g], //可选纸张类型
     has_jacket: 1, //可以有护封
     sort: 2, //显示顺序
@@ -76,8 +78,8 @@ const crafts = [{
     is_crosspage: 1, //跨页和单页都可选
     has_spine: 1, //有书脊
     spine_base_width: 12, //书脊最少宽度，低于此宽度不在书脊上显示内容
-    spines: [12, 24, 36], //书脊宽度区间
-    other_thickness: 0, //其他容差厚度
+    spineWidths: [12, 24, 36], //书脊宽度区间，超过最大值则按实际计算
+    other_thickness: 5, //其他容差厚度：硬壳厚度*2 + 其他容差
     papers: [tbz_200g_dbycz, tbz_200g_dbwcz], //可选纸张类型
     has_jacket: 1, //可以有护封
     sort: 3, //显示顺序

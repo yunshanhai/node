@@ -1,4 +1,4 @@
-function createElement(){
+function createElement() {
   let element = {
     x: 0,
     y: 0,
@@ -25,7 +25,7 @@ function createElement(){
   return element;
 }
 
-function createTextElement(){
+function createTextElement() {
   let element = {
     x: 0,
     y: 0,
@@ -36,7 +36,7 @@ function createTextElement(){
     angle: 0,
     text: {
       content: 0,
-      mode: layer.property.textModel,//text|label
+      mode: layer.property.textModel, //text|label
       fontSize: px2px(layer.property.size * layer.property.scaleX, 72, 300),
       lineHeight: layer.property.lineHeight,
       fontFamily: layer.property.font,
@@ -55,7 +55,7 @@ function createTextElement(){
   }
 }
 
-function addImage(element){
+function addImage(element) {
   element.type = 'image';
   element.is_fill = false;
   element.image = {
@@ -67,12 +67,12 @@ function addImage(element){
   }
 }
 
-function checkElement(elements){
-  for(let i in elements){
+function checkElement(elements) {
+  for (let i in elements) {
     let element = elements[i];
-    
+
     //元素类型 shape/image/decorate/
-    
+
     // if(!element.hasOwnProperty('type')){
     //   if(element.image != null){
     //     element.type = 'image';
@@ -142,42 +142,120 @@ function checkElement(elements){
   }
 }
 
-// function calcPageSize(page, basebook, pageCount){
-//   let size = {
-//     width: 0,
-//     height: 0
-//   };
-//   
-//   switch(page.page_type){
-//     case 0:
-//       //护封
-//       if(basebook.has_spine){
-//         if(basebook.spine_mode===0){
-//           //只根据内页计算
-//           size.width = basebook.width + basebook.jacket_ext_width + ;
-//         }
-//         
-//       }
-//       
-//       break;
-//     case 1:
-//       //封面
-//       // page.width = book.basebook.
-//       break;
-//     case 2:
-//       //内页，如果不重写就从basebook继承，如果重写就用自己的
-//       if(page.rerite_size===1){
-//         size.width = page.width;
-//         size.height = page.height;
-//       }else{
-//         size.width = basebook.width;
-//         size.height = basebook.height;
-//       }
-//       break;
-//     case 3:
-//       //自定义页
-//       size.width = page.width;
-//       size.height = page.height;
-//       break;
-//   }
-// }
+function getInnerPageCount(pages) {
+  let count = 0;
+  for (let i = 0; i < pages.length; i++) {
+    if (pages[i].page_type > 1) {
+      count++;
+    }
+  }
+  return count;
+}
+
+function getCraftById(crafts, id) {
+  for (let i = 0; i < crafts.length; i++) {
+    if (crafts[i].id === id) {
+      return crafts[i];
+    }
+  }
+  return null;
+}
+
+function getPaperById(papers, id) {
+  for (let i = 0; i < papers.length; i++) {
+    if (papers[i].id === id) {
+      return papers[i];
+    }
+  }
+  return null;
+}
+
+//书脊特定宽度计算：1.没有特定宽度返回实际值；2.有特定宽度，返回最合适的值；3.超过了特定宽度最大值，返回实际值
+function getSpineWidth(spineWidths, spineWidth) {
+  //没有特定宽度，直接返回实际值
+  if (spineWidths == null) {
+    return spineWidth;
+  }
+
+  let i = 0;
+  for (i; i < spineWidths.length; i++) {
+    if (spineWidth <= spineWidths[i]) {
+      break;
+    }
+  }
+
+  //超过了特定宽度最大值，返回实际值
+  if (i == spineWidths.length) {
+    return spineWidth;
+  }
+  return spineWidths[i];
+}
+
+function calcPageSize(page, book) {
+  let size = {
+    width: 0,
+    height: 0
+  };
+
+  let basebook = book.basebook;
+
+  switch (page.page_type) {
+    case 0:
+      {
+        //护封
+        let spineWidth = 0;
+        let innerPageCount = getInnerPageCount(book.pages);
+        if (book.craft.has_spine) {
+          //内页所有页厚度
+          let innerPageThickness = book.paper.thickness * innerPageCount;
+          //书脊宽度=内页所有页厚度+工艺容差厚度+本书的容差厚度
+          spineWidth = innerPageThickness + book.craft.other_thickness + book.other_thickness;
+          //书脊特定宽度区间处理
+          spineWidth = getSpineWidth(book.craft.spineWidths, spineWidth);
+
+        }
+        //护封实际宽度=内页宽度+护封扩展宽度+书脊宽度
+        size.width = basebook.width + basebook.jacket_ext_width + spineWidth;
+        size.height = basebook.height + basebook.jacket_ext_height;
+        size.spine = spineWidth;
+        break;
+      }
+    case 1:
+      {
+        //封面
+        let spineWidth = 0;
+        let innerPageCount = getInnerPageCount(book.pages);
+        if (book.craft.has_spine) {
+          //内页所有页厚度
+          let innerPageThickness = book.paper.thickness * innerPageCount;
+          //书脊宽度=内页所有页厚度+工艺容差厚度+本书的容差厚度
+          spineWidth = innerPageThickness + book.craft.other_thickness + book.other_thickness;
+          //书脊特定宽度区间处理
+          spineWidth = getSpineWidth(book.craft.spineWidths, spineWidth);
+
+        }
+        //护封实际宽度=内页宽度+护封扩展宽度+书脊宽度
+        size.width = basebook.width + basebook.cover_ext_width + spineWidth;
+        size.height = basebook.height + basebook.cover_ext_height;
+        size.spine = spineWidth;
+        break;
+      }
+    case 2:
+      //内页，如果不重写就从basebook继承，如果重写就用自己的
+      if (page.resize === 1) {
+        size.width = page.width;
+        size.height = page.height;
+      } else {
+        size.width = basebook.width;
+        size.height = basebook.height;
+      }
+      break;
+    case 3:
+      //自定义页
+      size.width = page.width;
+      size.height = page.height;
+      break;
+  }
+  
+  return size;
+}

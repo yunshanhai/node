@@ -101,16 +101,15 @@ if(id!=null){
         }
         data.currentPageIndex = index;
         
+        //工艺和纸张
+        book.craft = getCraftById(book.crafts, book.craft_id);
+        book.paper = getPaperById(book.craft.papers, book.paper_id);
+        
         for(let i in book.pages){
           let page = book.pages[i];
           
           //页面大小
-          // switch(page.page_type){
-          //   case 0:
-          //     page.width_px = mm2px(book.basebook.width + book.basebook.jacket_ext_width)
-          //   case 1:
-          //     page.width = book.basebook.
-          // }
+          page.size = calcPageSize(page, book);
           
           //解压元素和背景
           page.background = JSON.parse(page.background);
