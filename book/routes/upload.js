@@ -28,7 +28,7 @@ router.post('/image', upload.single('photos'), (req, res) => {
   }
   
   async function run(){
-    await new Promise((resolve, reject)=>{
+    new Promise((resolve, reject)=>{
       
       fs.rename(req.file.path, movepath, function(err){
         if(err){
@@ -63,9 +63,9 @@ router.post('/image', upload.single('photos'), (req, res) => {
     let url = `/upload/${req.body.book_id}/${req.file.filename + pathObj.ext}`; 
     
     let result = await new Promise((resolve, reject) => {
-      $sql = `insert into images (url,name,mime,size,width,height,book_id,user_id)
-              values (?,?,?,?,?,?,?,?)`;
-      $sqlParams = [url,name,pathObj.ext,req.file.size,0,0,req.body.book_id,0];
+      $sql = `insert into images (url,name,mime,size,width,height,book_id,user_id,type)
+              values (?,?,?,?,?,?,?,?,?)`;
+      $sqlParams = [url,name,pathObj.ext,req.file.size,0,0,req.body.book_id,0,req.body.type];
       db.query($sql, $sqlParams, (err, result)=>{
         console.log(err);
         console.log(result);
@@ -81,7 +81,8 @@ router.post('/image', upload.single('photos'), (req, res) => {
           width: 0,
           height: 0,
           book_id: req.body.book_id,
-          user_id: 0
+          user_id: 0,
+          type: req.body.type
         });
       });
     });

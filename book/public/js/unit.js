@@ -187,7 +187,11 @@ function deepCopy(obj){
 }
 
 
-
+/**
+ * 分册数字类型转换
+ * @param {Object} num
+ * @param {Object} fascicule_type
+ */
 function fasciculeNumToText(num, fascicule_type){
   num = parseInt(num);
   fascicule_type = parseInt(fascicule_type);

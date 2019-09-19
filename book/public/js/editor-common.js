@@ -10,16 +10,16 @@ function createElement() {
     stroke: config.shape.color,
     stroke_width: config.shape.stroke_width,
     stroke_dasharray: '',
-    stroke_opacity: 1,
+    stroke_opacity: 100,
     is_fill: config.shape.is_fill,
     fill: config.shape.color,
-    fill_opacity: 1,
+    fill_opacity: 100,
     angle: 0,
     display: true,
     fixed: false,
     rect: {
-      rx: 0,
-      ry: 0
+      r: 0,
+      is_square: false
     }
   };
   return element;
@@ -217,7 +217,7 @@ function calcPageSize(page, book) {
         //护封实际宽度=内页宽度+护封扩展宽度+书脊宽度
         size.width = basebook.width + basebook.jacket_ext_width + spineWidth;
         size.height = basebook.height + basebook.jacket_ext_height;
-        size.spine = spineWidth;
+        size.spine_width = spineWidth;
         break;
       }
     case 1:
@@ -237,14 +237,14 @@ function calcPageSize(page, book) {
         //护封实际宽度=内页宽度+护封扩展宽度+书脊宽度
         size.width = basebook.width + basebook.cover_ext_width + spineWidth;
         size.height = basebook.height + basebook.cover_ext_height;
-        size.spine = spineWidth;
+        size.spine_width = spineWidth;
         break;
       }
     case 2:
       //内页，如果不重写就从basebook继承，如果重写就用自己的
       if (page.resize === 1) {
-        size.width = page.width;
-        size.height = page.height;
+        size.width = page.resize_width;
+        size.height = page.resize_height;
       } else {
         size.width = basebook.width;
         size.height = basebook.height;
@@ -257,5 +257,29 @@ function calcPageSize(page, book) {
       break;
   }
   
-  return size;
+  //统一加出血线宽度
+  size.width += book.basebook.bleed * 2
+  size.height +=  + book.basebook.bleed * 2
+  
+  //
+  size.width_px = mm2px(size.width, config.dpi);
+  size.height_px = mm2px(size.height, config.dpi);
+  if(size.hasOwnProperty('spine_width')){
+    size.spine_width_px = mm2px(size.spine_width, config.dpi);
+  }
+  
+  if(page.hasOwnProperty('size')){
+    page.size.width = size.width;
+    page.size.height = size.height;
+    page.size.width_px = size.width_px;
+    page.size.height_px = size.height_px;
+    if(size.hasOwnProperty('spine_width')){
+      page.size.spine_width = size.spine_width;
+      page.size.spine_width_px = size.spine_width_px;
+    }
+  }else{
+    page.size = size;
+  }
+  
+  // return size;
 }

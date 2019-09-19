@@ -12,7 +12,6 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var bookRouter = require('./routes/book');
 var basebookRouter = require('./routes/basebook');
-var basepageRouter = require('./routes/basepage');
 var uploadRouter = require('./routes/upload');
 
 var app = express();
@@ -34,7 +33,6 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/book', bookRouter);
 app.use('/basebook', basebookRouter);
-app.use('/basepage', basepageRouter);
 app.use('/upload', uploadRouter);
 
 // catch 404 and forward to error handler

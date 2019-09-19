@@ -216,7 +216,7 @@ body {
   line-height: 1.5rem;
 }
 
-.sidebar_right .group input[type=text],input[type=number],input[type=color]{
+.sidebar_right .group input[type=text],input[type=number],input[type=color],input[type=range]{
   width: 118px;
   display: inline-block;
 }

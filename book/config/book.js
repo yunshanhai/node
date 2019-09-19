@@ -49,10 +49,11 @@ const crafts = [{
     is_crosspage: 0, //跨页不可选，单页可选
     has_spine: 1, //有书脊
     spine_base_width: 12, //书脊最少宽度，低于此宽度不在书脊上显示内容
-	spineWidths: null, //书脊宽度区间
+    spineWidths: null, //书脊宽度区间
     other_thickness: 0, //其他容差厚度
     papers: [tbz_128g, tzz_128g], //可选纸张类型
     has_jacket: 0, //不能有护封
+    bind_width: 10, //装订区宽度，毫米
     sort: 1, //显示顺序
     enable: 1, //是否启用
   },
@@ -64,10 +65,11 @@ const crafts = [{
     is_crosspage: 0, //跨页不可选，单页可选
     has_spine: 1, //有书脊
     spine_base_width: 12, //书脊最少宽度，低于此宽度不在书脊上显示内容
-	spineWidths: [12, 24, 36], //书脊宽度区间，超过最大值则按实际计算
+    spineWidths: [12, 24, 36], //书脊宽度区间，超过最大值则按实际计算
     other_thickness: 5, //其他容差厚度：硬壳厚度*2 + 其他容差
     papers: [tbz_128g, tzz_128g, tbz_200g], //可选纸张类型
     has_jacket: 1, //可以有护封
+    bind_width: 10, //装订区宽度，毫米
     sort: 2, //显示顺序
     enable: 1, //是否启用
   },
@@ -88,21 +90,48 @@ const crafts = [{
 ];
 
 const getCraftsByIsCrosspage = function(is_crosspage) {
-//   let tmp = null;
-//   if (is_crosspage === 0) {
-//     tmp = crafts.filter(item => item.enable === 1);
-//   } else {
-//     tmp = crafts.filter(item => item.enable === 1 && item.is_crosspage === 1);
-//   }
-// 
-//   return tmp.sort((item1, item2) => {
-//     return item1.sort > item2.sort;
-//   });
-  
+  //   let tmp = null;
+  //   if (is_crosspage === 0) {
+  //     tmp = crafts.filter(item => item.enable === 1);
+  //   } else {
+  //     tmp = crafts.filter(item => item.enable === 1 && item.is_crosspage === 1);
+  //   }
+  // 
+  //   return tmp.sort((item1, item2) => {
+  //     return item1.sort > item2.sort;
+  //   });
+
   return is_crosspage === 0 ? crafts : crafts.filter(item => item.is_crosspage === 1);
 }
 
 module.exports = {
   //根据是否跨页获取可用的工艺
-  getCraftsByIsCrosspage
+  getCraftsByIsCrosspage,
+  crafts,
+  pagetypes: [{
+    id: 0,
+    name: '护封'
+  }, {
+    id: 1,
+    name: '封面'
+  }, {
+    id: 2,
+    name: '内页',
+    groups: [{
+        id: 0,
+        name: '前置页'
+      },
+      {
+        id: 1,
+        name: '内页'
+      },
+      {
+        id: 2,
+        name: '后置页'
+      }
+    ]
+  }, {
+    id: 3,
+    name: '自定义页'
+  }]
 }

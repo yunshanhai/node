@@ -13,7 +13,7 @@ window.onload = function(){
 var data = {
   config : config,
   basebooks: [],
-  basepages: [],
+  crafts: [],
   newBook: {
     theme: 0,
     basebook_id: 0,
@@ -21,7 +21,10 @@ var data = {
     author: '',
     show_page_num: 1,
     fascicule: 0,
-    fascicule_type: 0
+    fascicule_type: 0,
+    craft_id: 0,
+    paper_id: 0,
+    other_thickness: 0
   },
   createBookMsg: '',
   // book: {},
@@ -89,6 +92,11 @@ if(id!=null){
       data.book = null;
     }else{
       let book = json.data;
+      
+      //工艺和纸张
+      book.craft = getCraftById(book.crafts, book.craft_id);
+      book.paper = getPaperById(book.craft.papers, book.paper_id);
+      
       if(book.pages.length>0){
         //当前选中页索引
         let index = -1;
@@ -101,33 +109,18 @@ if(id!=null){
         }
         data.currentPageIndex = index;
         
-        //工艺和纸张
-        book.craft = getCraftById(book.crafts, book.craft_id);
-        book.paper = getPaperById(book.craft.papers, book.paper_id);
-        
         for(let i in book.pages){
           let page = book.pages[i];
           
           //页面大小
-          page.size = calcPageSize(page, book);
+          calcPageSize(page, book);
           
           //解压元素和背景
           page.background = JSON.parse(page.background);
           page.elements = JSON.parse(page.elements);
           
           checkElement(page.elements)
-          // //计算封面、内页、内页前置、后置当前的页面数，已删除不计
-          // if(page.is_deleted===0){
-          //   book.basepages[page.page_type].total_page++;
-          // }
         }
-      }
-      
-      //生成页面类型的像素大小
-      for(let i in book.basepages){
-        let basepage = book.basepages[i];
-        basepage.width_px = mm2px(basepage.width, config.dpi);
-        basepage.height_px = mm2px(basepage.height, config.dpi);
       }
       
       data.book = book;
@@ -162,6 +155,14 @@ if(id!=null){
         },
         lastElementIndex: function(){
           return this.currentPage.elements.length - 1;
+        },
+        pages: function(){
+          return this.book.pages.sort(function(page1, page2){
+            return page1.sort - page2.sort;
+          })
+          .sort(function(page1, page2){
+            return page1.page_group - page2.page_group;
+          });
         },
         //拖动层对象
         dragObj: function(){
@@ -259,30 +260,37 @@ if(id!=null){
         // },
         //当前页像素尺寸：宽高和出血线
         currentPageSize: function(){
-          
-          let basepage = null;
-          
-          if(this.currentPage != null){
-            basepage = this.book.basepages[this.currentPage.page_type];
+          let height_px = 0,
+              width_px = 0,
+              bleed_px = mm2px(this.book.basebook.bleed, config.dpi);
+          if(this.currentPage!=null){
+            height_px = mm2px(this.currentPage.size.height, config.dpi);
+            width_px = mm2px(this.currentPage.size.width, config.dpi);
           }else{
-            basepage = this.book.basepages[1];
+            let page = {
+              page_type: 2,
+              resize: 0
+            }
+            calcPageSize(page, this.book);
+            height_px = page.size.height_px;
+            width_px = page.size.width_px;
           }
           
-          let viewbox_height = basepage.height_px;
+          let viewbox_height = height_px;
           let viewbox_width = this.editor.width / this.editor.height * viewbox_height;
           let scale = this.editor.width / viewbox_width;
-          let translate_x =(this.editor.width - basepage.width_px * scale) / 2;
+          let translate_x =(this.editor.width - width_px * scale) / 2;
           //让页面在画布居中，需要将viewbox的x值往0的左方移动
-          let viewbox_x = -1 * (viewbox_width - basepage.width_px) / 2;
+          let viewbox_x = -1 * (viewbox_width - width_px) / 2;
           
           let pageSize = {
-            width: basepage.width_px,
-            height: basepage.height_px,
-            bleed_top: mm2px(basepage.bleed_top, config.dpi),
-            bleed_right: basepage.width_px - mm2px(basepage.bleed_right, config.dpi),
-            bleed_bottom: basepage.height_px - mm2px(basepage.bleed_bottom, config.dpi),
-            bleed_left: mm2px(basepage.bleed_left, config.dpi),
-            single_page: basepage.single_page,
+            width: width_px,
+            height: height_px,
+            bleed_top: bleed_px,
+            bleed_right: width_px - bleed_px,
+            bleed_bottom: height_px - bleed_px,
+            bleed_left: bleed_px,
+            is_crosspage: this.book.basebook.is_crosspage,
             viewbox_width: viewbox_width,
             viewbox_height: viewbox_height,
             viewbox_x: viewbox_x,
@@ -365,12 +373,54 @@ if(id!=null){
           let width = 0;
           for(let i in this.book.pages){
             let page = this.book.pages[i];
-            let basepage = this.book.basepages[page.page_type];
-            width += basepage.width_px / basepage.height_px * config.pageContainerHeight;
+            width += page.size.width_px / page.size.height_px * config.pageContainerHeight;
             width += 5;
           }
           
           return width;
+        },
+        
+        craftsFilter: function(){
+          if(this.newBook.basebook_id==0){
+            return [];
+          }
+          
+          let basebook = null;
+          for(let i=0; i < this.basebooks.length; i++){
+            if(this.basebooks[i].id == this.newBook.basebook_id){
+              basebook = this.basebooks[i];
+              break;
+            }
+          }
+          
+          return this.crafts.filter(item=>{
+            return item.is_crosspage == basebook.is_crosspage;
+          });
+        },
+        papersFilter: function(){
+          if(this.newBook.craft_id==0){
+            return [];
+          }
+          
+          let craft = null;
+          for(let i in this.crafts){
+            if(this.crafts[i].id == this.newBook.craft_id){
+              craft = this.crafts[i];
+              break;
+            }
+          }
+          
+          return craft.papers;
+        },
+        selectImageTypeName: function(){
+          let typeName = '照片';
+          if(this.selectImageType=='decorate'){
+            typeName = '装饰图'
+          }else if(this.selectImageType == 'background'){
+            typeName = '背景图';
+          }
+          
+          return typeName;
         }
       },
       watch: {
@@ -395,12 +445,10 @@ if(id!=null){
       },
       methods: {
         getSize: function(page, height){
-          let basepage = this.book.basepages[page.page_type];
-          
           let pageSize = {
-            width: basepage.width_px / basepage.height_px * height,
+            width: page.size.width_px / page.size.height_px * height,
             height: height,
-            viewbox_value: '0 0 ' + basepage.width_px + ' ' + basepage.height_px
+            viewbox_value: '0 0 ' + page.size.width_px + ' ' + page.size.height_px
           };
           
           return pageSize;
@@ -428,6 +476,7 @@ if(id!=null){
                 success: function(result){
                   if(result.statusCode == 200){
                     app.basebooks = app.basebooks.concat(result.data);
+                    app.crafts = app.crafts.concat(result.crafts);
                     resolve();
                   }else{
                     reject(result.message);
@@ -460,6 +509,14 @@ if(id!=null){
           
           if(this.newBook.basebook_id==0){
             this.createBookMsg = '请选择规格类型';
+            return;
+          }
+          if(this.newBook.craft_id==0){
+            this.createBookMsg = '请选择装订工艺';
+            return;
+          }
+          if(this.newBook.paper_id==0){
+            this.createBookMsg = '请选择纸质类型';
             return;
           }
           if(this.newBook.name == ''){
@@ -502,12 +559,7 @@ if(id!=null){
         //新增页
         createPage: function(){
           let total = this.getTotalPageNumByPageType(this.currentPagetype);
-          let basepage = this.book.basepages[this.currentPagetype];
           
-          if(total>=basepage.max_pages){
-            this.addPageMsg = '{0}可添加{1}页，已添加{2}页，已达上限'.format(basepage.name, basepage.max_pages, total) ;
-            return;
-          }
           let page_group = this.currentPagetype === 2 ? this.currentPagegroup : 0;
           $.ajax({
             type: "post",
@@ -537,6 +589,7 @@ if(id!=null){
                   sort: total,
                   is_deleted: 0
                 };
+                calcPageSize(page, app.book);
                 app.book.pages.push(page);
                 
                 app.currentPageIndex = app.book.pages.length - 1;
@@ -644,11 +697,11 @@ if(id!=null){
         },
         //书脊区域，左线和右线
         spinePath: function(page, position = 'left'){
-          let basepage = this.book.basepages[page.page_type];
-          let spine_width = 360;
+          calcPageSize(page, this.book);
+          
           let points = [
-            [basepage.width_px / 2 + (position === 'left' ? 0 - spine_width / 2 : spine_width / 2), mm2px(basepage.bleed_top, config.dpi)],
-            [basepage.width_px / 2 + (position === 'left' ? 0 - spine_width / 2 : spine_width / 2), basepage.height_px - mm2px(basepage.bleed_bottom, config.dpi)]
+            [page.size.width_px / 2 + (position === 'left' ? 0 - page.size.spine_width_px / 2 : page.size.spine_width_px / 2), mm2px(this.book.basebook.bleed, config.dpi)],
+            [page.size.width_px / 2 + (position === 'left' ? 0 - page.size.spine_width_px / 2 : page.size.spine_width_px / 2), page.size.height_px - mm2px(this.book.basebook.bleed, config.dpi)]
           ];
           
           let line = d3.svg.line()
@@ -661,16 +714,13 @@ if(id!=null){
             // .interpolate('linear-closed');
           return line(points);
         },
-        //书脊
+        //书脊书名
         spineBookName: function(page){
-          
-          // if(page.page_type === 0 || page.page_type === 1){
-            let basepage = this.book.basepages[page.page_type];
-          // }
+
           let fontSizePt = 36;
           let fontSize = px2px(fontSizePt, 72, 300);
-          let x = basepage.width_px / 2;
-          let y = basepage.height_px / 7;
+          let x = page.size.width_px / 2;
+          let y = page.size.height_px / 7;
           
           return {
             x: x,
@@ -679,15 +729,13 @@ if(id!=null){
             fontFamily: '微软雅黑'
           };
         },
+        //书脊作者名
         spineBookAuthor: function(page){
           
-          // if(page.page_type === 0 || page.page_type === 1){
-            let basepage = this.book.basepages[page.page_type];
-          // }
           let fontSizePt = 16;
           let fontSize = px2px(fontSizePt, 72, 300);
-          let x = basepage.width_px / 2;
-          let y = basepage.height_px / 3 * 2;
+          let x = page.size.width_px / 2;
+          let y = page.size.height_px / 3 * 2;
           
           return {
             x: x,
@@ -695,6 +743,21 @@ if(id!=null){
             fontSize: fontSize,
             fontFamily: '微软雅黑'
           };
+        },
+        //计算element的內圆属性
+        elementRect: function(element){
+          if(element.rect.is_square){
+            let tmp = element.width > element.height ? element.height : element.width;
+            return {
+              width: tmp,
+              height: tmp
+            };
+          }else{
+            return {
+              width: element.width,
+              height: element.height
+            };
+          }
         },
         //计算element的內圆属性
         elementCircle: function(element){
@@ -879,14 +942,15 @@ if(id!=null){
         // addImage: function(){
         //   addImage(this.currentElement);
         // },
-        showUploadPanel: function(){
+        showUploadPanel: function(type){
+          this.selectImageType = type;
           //清空之前的选择
           this.fileImages.splice(0,this.fileImages.length);
           document.getElementById('files').value="";
           this.uploaded = 0;
           
           this.createPagePanelLayerIndex = layer.open({
-            title: "上传图片",
+            title: "上传" + this.selectImageTypeName,
             type: 1,
             skin: 'layui-layer-rim', //加上边框
             offset: 't',
@@ -895,10 +959,14 @@ if(id!=null){
             content: $('#uploadPanel')
           });
         },
+        imageCount: function(type){
+          return this.images.filter(item=>item.type==type).length;
+        },
         showSelectImagePanel: function(type){
           this.selectImageType = type;
+          
           this.createPagePanelLayerIndex = layer.open({
-            title: "选择图片",
+            title: "选择" + this.selectImageTypeName,
             type: 1,
             skin: 'layui-layer-rim', //加上边框
             offset: 'rt',
@@ -908,11 +976,9 @@ if(id!=null){
           });
         },
         selectImage: function(image){
-          if(this.selectImageType == 'element'){
-            if(this.currentElement.type == 'image'){
-              this.currentElement.image.url = image.url;
-            }else{
-              this.currentElement.type = 'image';
+          if(this.selectImageType == 'image' || this.selectImageType == 'decorate'){
+            if(!this.currentElement.hasOwnProperty('image')){
+              this.currentElement.type = this.selectImageType;
               this.currentElement.is_fill = false;
               this.currentElement.image = {
                 translate_x: 0,
@@ -921,13 +987,43 @@ if(id!=null){
                 height_scale: 1,
                 url: image.url
               }
+            }else{
+              this.currentElement.image.url = image.url;
             }
-          }else{
+            
+          }
+          else if(this.selectImageType == 'background'){
             this.currentPage.background.image = image.url;
           }
           
           if(this.config.closeWhenSelected){
-            layer.close(this.createPagePanelLayerIndex);
+            layer.closeAll('page');
+          }
+        },
+        changeShapeToDecorate: function(){
+          if(this.currentElement.type=='shape'){
+            this.currentElement.type = 'decorate';
+            this.currentElement.is_fill = false;
+            this.currentElement.image = {
+              translate_x: 0,
+              translate_y: 0,
+              width_scale: 1,
+              height_scale: 1,
+              url: null
+            }
+          }
+        },
+        changeShapeToImage: function(){
+          if(this.currentElement.type=='shape'){
+            this.currentElement.type = 'image';
+            this.currentElement.is_fill = false;
+            this.currentElement.image = {
+              translate_x: 0,
+              translate_y: 0,
+              width_scale: 1,
+              height_scale: 1,
+              url: null
+            }
           }
         },
         selectedRightPanel: function(index){
@@ -961,6 +1057,7 @@ if(id!=null){
               formData.append('photos', input.files[i]);
               formData.append('book_id', this.book.id);
               formData.append('index', i);
+              formData.append('type', this.selectImageType);
               $.ajax({
                   type: 'post',
                   url: '/upload/image',
@@ -1012,6 +1109,20 @@ if(id!=null){
           }
           
           return url;
+        },
+        elementType: function(type){
+          switch(type){
+            case 'shape':
+              return '形状';
+            case 'image':
+              return '照片';
+            case 'decorate':
+              return '装饰';
+            case 'text':
+              return '文本';
+            default: 
+              return '未知';
+          }
         }
       }
     })

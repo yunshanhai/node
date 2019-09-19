@@ -125,6 +125,7 @@ let mounted = function() {
     })
     .call(dragPanel);
   
+  //页面的右键点击
   d3.select('#canvas_page').on('mousedown', function(){
     if(d3.event.button === 2){
       that.contextMenu.show = true;
@@ -156,44 +157,36 @@ let mounted = function() {
   })
 
   //角度控制点
-  let rotateFlag = null;
-  let dragCount = 0;
+  let dragBeginTime = 0;
   let dragCircle = d3.behavior.drag()
     // .origin(function(d) {
     //   return {x: that.dragObj.circle.cx, y: that.dragObj.circle.cy };
     // })
     .on("dragstart",function(){
-      
+      dragBeginTime = new Date().getTime();
     })
     .on("drag", function(d) {
-      
-      if(dragCount > 0){
+      let currentTime = new Date().getTime();
+      if(currentTime-dragBeginTime>40){
         let element = that.currentElement;
-        
         let angle = getAngle(that.dragObj.panel.center.x, that.dragObj.panel.center.y, d3.event.x, d3.event.y);
-        cl(d3.event);
-        cl("中心点:{0},{1};移动点：{2},{3};角度：{4};偏移：{5},{6}".format(
-          that.dragObj.panel.center.x,
-          that.dragObj.panel.center.y,
-          d3.event.x,
-          d3.event.y,
-          angle,
-          d3.event.x,
-          d3.event.y)
-        );
+        element.angle = angle;
         
-        if(rotateFlag){
-          clearTimeout(rotateFlag);
-        }
-        rotateFlag = setTimeout(()=>{
-          element.angle = angle;
-        },10);
+        dragBeginTime = currentTime;
+        
+        // cl(d3.event);
+        // cl("中心点:{0},{1};移动点：{2},{3};角度：{4};偏移：{5},{6}".format(
+        //   that.dragObj.panel.center.x,
+        //   that.dragObj.panel.center.y,
+        //   d3.event.x,
+        //   d3.event.y,
+        //   angle,
+        //   d3.event.x,
+        //   d3.event.y)
+        // );
       }
-      
-      dragCount++;
     })
     .on('dragend', function(){
-      dragCount = 0;
     });
   d3.select('#dragCircle')
     .on('click',function() {

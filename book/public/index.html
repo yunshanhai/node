@@ -55,8 +55,8 @@
             <!-- <div title="保存" class="menu_item" v-on:click="save()">保存</div> -->
             <div title="新建book" class="menu_item" v-on:click="showCreateBookPanel()">新建Book</div>
             <div class="separator"></div>
-            <div v-for="(basepage,key,index) in book.basepages" v-bind:title="'打印预览——' + basepage.name" class="menu_item"
-              v-on:click="preview(key)">打印预览——{{basepage.name}}</div>
+            <div v-for="(pagetype,index) in book.pagetypes" v-bind:title="'打印预览——' + pagetype.name" class="menu_item"
+              v-on:click="preview(pagetype.id)">打印预览——{{pagetype.name}}</div>
             <div class="separator"></div>
             <div title="手机端显示" class="menu_item" v-on:click="showQrcode()">手机端显示</div>
           </div>
@@ -126,27 +126,30 @@
                         v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" />
                     </clipPath>
                     <!--图片-->
-                    <image v-if="(element.type === 'image' || element.type === 'decorate') && element.image.url!=null"
-                      v-bind:x="element.x + element.image.translate_x" v-bind:y="element.y + element.image.translate_y"
-                      v-bind:width="element.width * element.image.width_scale" v-bind:height="element.height * element.image.height_scale"
-                      v-bind:href="element.image.url|url_format('m')" v-bind:clip-path="element.shape!=='rect' ? 'url(#clip'+index+')' : ''"
-                      preserveAspectRatio="xMidYMid slice" />
+                    <image v-if="element.type === 'image' && element.image.url!=null" v-bind:x="element.x + element.image.translate_x"
+                      v-bind:y="element.y + element.image.translate_y" v-bind:width="element.width * element.image.width_scale"
+                      v-bind:height="element.height * element.image.height_scale" v-bind:href="element.image.url|url_format('m')"
+                      v-bind:clip-path="element.shape!=='rect' ? 'url(#clip'+index+')' : ''" preserveAspectRatio="xMidYMid slice" />
+                    <!--装饰图-->
+                    <image v-if="element.type === 'decorate' && element.image.url!=null" v-bind:x="element.x" v-bind:y="element.y"
+                      v-bind:width="element.width" v-bind:height="element.height" v-bind:href="element.image.url|url_format('m')"
+                      v-bind:clip-path="element.shape!=='rect' ? 'url(#clip'+index+')' : ''" preserveAspectRatio="xMidYMid meet" />
                     <!--图形-->
                     <g v-if="element.type === 'shape' || element.type === 'image'">
-                      <rect v-if="element.shape==='rect'" v-bind:x="element.x" v-bind:y="element.y" v-bind:width="element.width"
-                        v-bind:height="element.height" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
-                        v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
-                        v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity"
-                        v-bind:rx="element.rect.rx" v-bind:ry="element.rect.ry" />
+                      <rect v-if="element.shape==='rect'" v-bind:x="element.x" v-bind:y="element.y" v-bind:width="elementRect(element).width"
+                        v-bind:height="elementRect(element).height" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+                        v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity/100"
+                        v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity/100"
+                        v-bind:rx="element.width/100*element.rect.r" v-bind:ry="element.width/100*element.rect.r" />
                       <circle v-else-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
                         v-bind:r="elementCircle(element).r" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
-                        v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
-                        v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" />
+                        v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity/100"
+                        v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity/100" />
                       <ellipse v-else-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx" v-bind:cy="elementEllipse(element).cy"
                         v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" v-bind:stroke="element.stroke"
                         v-bind:stroke-width="element.is_stroke?element.stroke_width:0" v-bind:stroke-dasharray="element.stroke_dasharray"
-                        v-bind:stroke-opacity="element.stroke_opacity" v-bind:fill="element.is_fill?element.fill:'none'"
-                        v-bind:fill-opacity="element.fill_opacity" />
+                        v-bind:stroke-opacity="element.stroke_opacity/100" v-bind:fill="element.is_fill?element.fill:'none'"
+                        v-bind:fill-opacity="element.fill_opacity/100" />
                     </g>
                     <!--面板-->
                     <rect class="elementPanel" v-bind:id="'panel'+index" v-bind:x="element.x" v-bind:y="element.y"
@@ -188,9 +191,9 @@
             <!--出血线-->
             <path v-if="currentPage!=null" v-bind:d="bleedPath" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
             <!--双页分割线-->
-            <path v-if="currentPage!=null && currentPageSize.single_page===0" v-bind:d="midPath" style="stroke: darkgray; stroke-width:3; stroke-dasharray: 10;;"></path>
-            <!--            <path v-if="currentPageSize.single_page===0" v-bind:d="midPathTop" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
-            <path v-if="currentPageSize.single_page===0" v-bind:d="midPathBottom" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path> -->
+            <path v-if="currentPage!=null && currentPageSize.is_crosspage===1" v-bind:d="midPath" style="stroke: darkgray; stroke-width:3; stroke-dasharray: 10;;"></path>
+            <!--            <path v-if="currentPageSize.is_crosspage===0" v-bind:d="midPathTop" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
+            <path v-if="currentPageSize.is_crosspage===0" v-bind:d="midPathBottom" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path> -->
             <!--拖动组-->
             <g v-show="currentElementIndex>-1 && currentSelectedTools==='pointer'" v-bind:transform="dragObj.transform">
               <!--拖动层-->
@@ -222,7 +225,7 @@
             <!--选择框-->
             <g v-show="currentSelectedTools!=='pointer'">
               <rect id="selectPanel" v-bind:x="currentPageSize.viewbox_x" y="0" v-bind:width="currentPageSize.viewbox_width"
-                v-bind:height="currentPageSize.viewbox_height" fill="red" fill-opacity="0" v-bind:class="[currentSelectedTools=='text'?'text':'crosshair']"/>
+                v-bind:height="currentPageSize.viewbox_height" fill="red" fill-opacity="0" v-bind:class="[currentSelectedTools=='text'?'text':'crosshair']" />
               <rect id="select" v-bind:x="selectObj.x" v-bind:y="selectObj.y" v-bind:width="selectObj.width"
                 v-bind:height="selectObj.height" stroke="#666" stroke-width="3" stroke-dasharray="18,12" fill="rgb(22,145,232)"
                 fill-opacity="0.1" v-show="currentSelectedTools==='select'" />
@@ -322,21 +325,21 @@
                   <label>
                     <span>背景:</span>
                     <button v-on:click="showSelectImagePanel('background')" class="button1">选择</button>
-                    <button v-on:click="showUploadPanel()" class="button1">上传</button>
+                    <button v-on:click="showUploadPanel('background')" class="button1">上传</button>
                     <!-- <input type="text" v-model.lazy="currentPage.background.image" /> -->
                   </label>
                 </div>
                 <div>
                   <label>
                     <span>页面类型:</span>
-                    {{book.basepages[currentPage.page_type].name}}
+                    {{book.pagetypes[currentPage.page_type].name}}
                   </label>
                 </div>
                 <div>
                   <label>
                     <span>页面大小:</span>
-                    {{Math.round(book.basepages[currentPage.page_type].width_px)}}px *
-                    {{Math.round(book.basepages[currentPage.page_type].height_px)}}px
+                    {{Math.round(currentPage.size.width_px)}}px *
+                    {{Math.round(currentPage.size.height_px)}}px
                   </label>
                 </div>
 
@@ -369,27 +372,30 @@
                             v-bind:cy="elementEllipse(element).cy" v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" />
                         </clipPath>
                         <!--图片-->
-                        <image v-if="(element.type === 'image' || element.type === 'decorate') && element.image.url!=null"
-                          v-bind:x="element.x + element.image.translate_x" v-bind:y="element.y + element.image.translate_y"
-                          v-bind:width="element.width * element.image.width_scale" v-bind:height="element.height * element.image.height_scale"
-                          v-bind:href="element.image.url" v-bind:clip-path="element.shape!=='rect' ? 'url(#clip'+index+')' : ''"
-                          preserveAspectRatio="xMidYMid slice" />
+                        <image v-if="element.type === 'image' && element.image.url!=null" v-bind:x="element.x + element.image.translate_x"
+                          v-bind:y="element.y + element.image.translate_y" v-bind:width="element.width * element.image.width_scale"
+                          v-bind:height="element.height * element.image.height_scale" v-bind:href="element.image.url|url_format('m')"
+                          v-bind:clip-path="element.shape!=='rect' ? 'url(#clip'+index+')' : ''" preserveAspectRatio="xMidYMid slice" />
+                        <!--装饰图-->
+                        <image v-if="element.type === 'decorate' && element.image.url!=null" v-bind:x="element.x" v-bind:y="element.y"
+                          v-bind:width="element.width" v-bind:height="element.height" v-bind:href="element.image.url|url_format('m')"
+                          v-bind:clip-path="element.shape!=='rect' ? 'url(#clip'+index+')' : ''" preserveAspectRatio="xMidYMid meet" />
                         <!--图形-->
                         <g v-if="element.type === 'shape' || element.type === 'image'">
-                          <rect v-if="element.shape==='rect'" v-bind:x="element.x" v-bind:y="element.y" v-bind:width="element.width"
-                            v-bind:height="element.height" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
-                            v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
-                            v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity"
-                            v-bind:rx="element.rect.rx" v-bind:ry="element.rect.ry" />
+                          <rect v-if="element.shape==='rect'" v-bind:x="element.x" v-bind:y="element.y" v-bind:width="elementRect(element).width"
+                            v-bind:height="elementRect(element).height" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+                            v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity/100"
+                            v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity/100"
+                            v-bind:rx="element.width/100*element.rect.r" v-bind:ry="element.width/100*element.rect.r" />
                           <circle v-else-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
                             v-bind:r="elementCircle(element).r" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
-                            v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
-                            v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" />
+                            v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity/100"
+                            v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity/100" />
                           <ellipse v-else-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx"
                             v-bind:cy="elementEllipse(element).cy" v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry"
                             v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
-                            v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
-                            v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" />
+                            v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity/100"
+                            v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity/100" />
                         </g>
                       </g>
                       <g v-else-if="element.type === 'text'" v-bind:transform="elementTransform(element)">
@@ -413,6 +419,22 @@
           <!--元素-->
           <div v-show="rightPanelIndex===2">
             <div v-if="currentElementIndex>-1">
+              <p>基本信息</p>
+              <div class="group">
+                <div>
+                  <label>
+                    <span>类型：</span>
+                    {{currentElement.type|elementType}}
+                  </label>
+                </div>
+                <div v-if="currentElement.type==='shape'">
+                  <label>
+                    <span>改为：</span>
+                    <button v-on:click="showSelectImagePanel('image')">照片</button>
+                    <button v-on:click="showSelectImagePanel('decorate')">元素</button>
+                  </label>
+                </div>
+              </div>
               <p>位置和大小</p>
               <div class="group">
                 <div>
@@ -455,20 +477,20 @@
                 <div>
                   <label>
                     <span>角度:</span>
-                    <input type="number" v-model.number="currentElement.angle" />
+                    <input type="range" min="0" max="360" v-model.number="currentElement.angle" />
                   </label>
                 </div>
                 <div v-show="currentElement.shape==='rect'">
                   <div>
                     <label>
-                      <span>圆角x:</span>
-                      <input type="number" v-model.number="currentElement.rect.rx" />
+                      <span>圆角:</span>
+                      <input type="range" min="0" max="100" v-model.number="currentElement.rect.r" />
                     </label>
                   </div>
                   <div>
                     <label>
-                      <span>圆角y:</span>
-                      <input type="number" v-model.number="currentElement.rect.ry" />
+                      <span>正方形:</span>
+                      <input type="checkbox" v-model="currentElement.rect.is_square" />
                     </label>
                   </div>
                 </div>
@@ -484,7 +506,7 @@
                 <div>
                   <label>
                     <span>宽度:</span>
-                    <input type="number" v-model.number="currentElement.stroke_width" />
+                    <input type="range" min="0" max="5000" v-model.number="currentElement.stroke_width" />
                   </label>
                 </div>
                 <div>
@@ -502,7 +524,7 @@
                 <div>
                   <label>
                     <span>透明度:</span>
-                    <input type="text" v-model.number="currentElement.stroke_opacity" />
+                    <input type="range" min="0" max="100" v-model.number="currentElement.stroke_opacity" />
                   </label>
                 </div>
               </div>
@@ -523,27 +545,18 @@
                 <div>
                   <label>
                     <span>透明度:</span>
-                    <input type="number" v-model.number="currentElement.fill_opacity" />
+                    <input type="range" min="0" max="100" v-model.number="currentElement.fill_opacity" />
                   </label>
                 </div>
               </div>
               <p>图片</p>
               <!-- <button v-on:click="addImage()">添加图片</button> -->
-              <div class="group" v-if="currentElement.image==null">
-                <div>
-                  <label>
-                    <span>图片：</span>
-                    <button v-on:click="showSelectImagePanel('element')">选择</button>
-                    <button v-on:click="showUploadPanel()">上传</button>
-                  </label>
-                </div>
-              </div>
               <div class="group" v-if="currentElement.image!=null">
                 <div>
                   <label>
                     <span>图片：</span>
-                    <button v-on:click="showSelectImagePanel('element')">选择</button>
-                    <button v-on:click="showUploadPanel()">上传</button>
+                    <button v-on:click="showSelectImagePanel(currentElement.type)">选择</button>
+                    <button v-on:click="showUploadPanel(currentElement.type)">上传</button>
                   </label>
                 </div>
                 <div>
@@ -622,14 +635,14 @@
       </div>
       <div class="sidebar_bottom" v-if="book">
         <div id="pagesContainer" v-bind:style="{'width': pagesContainerWidth + 'px', 'left': pagesContainerLeft + 'px'}">
-          <div v-for="(page,pageIndex) in book.pages" class="page" v-bind:style="{width: getSize(page, config.pageContainerHeight).width + 'px'}">
+          <div v-for="(page,pageIndex) in pages" class="page" v-bind:style="{width: getSize(page, config.pageContainerHeight).width + 'px'}">
             <svg v-bind:width="getSize(page, config.pageContainerHeight).width" v-bind:height="config.pageContainerHeight"
               v-bind:view-box.camel="getSize(page, config.pageContainerHeight).viewbox_value" v-on:click="goPage(pageIndex)">
               <!--图片背景 直接设置在svg上-->
-              <!-- <rect v-bind:width="book.basepages[page.page_type].width_px" v-bind:height="book.basepages[page.page_type].height_px" fill="white"/> -->
+              <!-- <rect v-bind:width="page.size.width_px" v-bind:height="page.size.height_px" fill="white"/> -->
               <!--图片背景-->
-              <image v-bind:href="page.background.image|url_format('m')" v-bind:width="book.basepages[page.page_type].width_px"
-                v-bind:height="book.basepages[page.page_type].height_px" preserveAspectRatio="xMidYMid slice" />
+              <image v-bind:href="page.background.image|url_format('m')" v-bind:width="page.size.width_px"
+                v-bind:height="page.size.height_px" preserveAspectRatio="xMidYMid slice" />
               <!--页面元素-->
               <g v-for="(element, index) in page.elements" v-show="element.display" v-bind:transform="elementTransform(element)">
                 <!--裁切路径-->
@@ -640,30 +653,33 @@
                     v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" />
                 </clipPath>
                 <!--图片-->
-                <image v-if="element.type==='image' && element.image.url!=null" v-bind:x="element.x + element.image.translate_x"
+                <image v-if="element.type === 'image' && element.image.url!=null" v-bind:x="element.x + element.image.translate_x"
                   v-bind:y="element.y + element.image.translate_y" v-bind:width="element.width * element.image.width_scale"
-                  v-bind:height="element.height * element.image.height_scale" v-bind:href="element.image.url|url_format('s')"
-                  v-bind:clip-path="element.shape!=='rect' ? 'url(#clip_' + pageIndex + '_' + index + ')' : ''"
-                  preserveAspectRatio="xMidYMid slice" />
+                  v-bind:height="element.height * element.image.height_scale" v-bind:href="element.image.url|url_format('m')"
+                  v-bind:clip-path="element.shape!=='rect' ? 'url(#clip_' + pageIndex + '_' + index + ')' : ''" preserveAspectRatio="xMidYMid slice" />
+                <!--装饰图-->
+                <image v-if="element.type === 'decorate' && element.image.url!=null" v-bind:x="element.x" v-bind:y="element.y"
+                  v-bind:width="element.width" v-bind:height="element.height" v-bind:href="element.image.url|url_format('m')"
+                  v-bind:clip-path="element.shape!=='rect' ? 'url(#clip_' + pageIndex + '_' + index + ')' : ''" preserveAspectRatio="xMidYMid meet" />
                 <!--边框-->
-                <rect v-if="element.shape==='rect'" v-bind:x="element.x" v-bind:y="element.y" v-bind:width="element.width"
-                  v-bind:height="element.height" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
-                  v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
-                  v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity"
-                  v-bind:rx="element.rect.rx" v-bind:ry="element.rect.ry" />
+                <rect v-if="element.shape==='rect'" v-bind:x="element.x" v-bind:y="element.y" v-bind:width="elementRect(element).width"
+                  v-bind:height="elementRect(element).height" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
+                  v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity/100"
+                  v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity/100"
+                  v-bind:rx="element.width/100*element.rect.r" v-bind:ry="element.width/100*element.rect.r" />
                 <circle v-else-if="element.shape==='circle'" v-bind:cx="elementCircle(element).cx" v-bind:cy="elementCircle(element).cy"
                   v-bind:r="elementCircle(element).r" v-bind:stroke="element.stroke" v-bind:stroke-width="element.is_stroke?element.stroke_width:0"
-                  v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity"
-                  v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity" />
+                  v-bind:stroke-dasharray="element.stroke_dasharray" v-bind:stroke-opacity="element.stroke_opacity/100"
+                  v-bind:fill="element.is_fill?element.fill:'none'" v-bind:fill-opacity="element.fill_opacity/100" />
                 <ellipse v-else-if="element.shape==='ellipse'" v-bind:cx="elementEllipse(element).cx" v-bind:cy="elementEllipse(element).cy"
                   v-bind:rx="elementEllipse(element).rx" v-bind:ry="elementEllipse(element).ry" v-bind:stroke="element.stroke"
                   v-bind:stroke-width="element.is_stroke?element.stroke_width:0" v-bind:stroke-dasharray="element.stroke_dasharray"
-                  v-bind:stroke-opacity="element.stroke_opacity" v-bind:fill="element.is_fill?element.fill:'none'"
-                  v-bind:fill-opacity="element.fill_opacity" />
+                  v-bind:stroke-opacity="element.stroke_opacity/100" v-bind:fill="element.is_fill?element.fill:'none'"
+                  v-bind:fill-opacity="element.fill_opacity/100" />
               </g>
             </svg>
             <div class="currentPage" v-show="pageIndex==currentPageIndex"></div>
-            <p>{{book.basepages[page.page_type].name}}-{{page.sort + 1}}</p>
+            <p>{{book.pagetypes[page.page_type].id === 2 ? book.pagetypes[page.page_type].groups[page.page_group].name : book.pagetypes[page.page_type].name}}-{{page.sort + 1}}</p>
           </div>
         </div>
       </div>
@@ -699,9 +715,9 @@
       <!--新增页弹出面板-->
       <div id="createPagePanel" style="display: none; padding: 1rem;">
         <p>页面类型：</p>
-        <div v-for="(value,key,index) in book.basepages" style="display: inline-block; margin-right: 1.5rem;">
+        <div v-for="(pagetype,index) in book.pagetypes" style="display: inline-block; margin-right: 1.5rem;">
           <label>
-            <input type="radio" v-bind:value="key" v-model.number="currentPagetype" /> {{value.name}}（{{value.min_pages == value.max_pages ? value.min_pages + '页' : value.min_pages + '页-' + value.max_pages + '页'}}）
+            <input type="radio" v-bind:value="pagetype.id" v-model.number="currentPagetype" /> {{pagetype.name}}
           </label>
         </div>
         <div v-show="currentPagetype == '2'" style="display: inline-block; margin-right: 1.5rem; margin-top: 1rem;">
@@ -730,6 +746,24 @@
             <select v-model.number="newBook.basebook_id">
               <option value="0">请选择</option>
               <option v-for="(value,index) in basebooks" v-bind:value="value.id">{{value.name}}</option>
+            </select>
+          </label>
+        </div>
+        <div>
+          <label>
+            <span style="display: inline-block; width:5em;">装订工艺：</span>
+            <select v-model.number="newBook.craft_id">
+              <option value="0">请选择</option>
+              <option v-for="(value,index) in craftsFilter" v-bind:value="value.id">{{value.name}}</option>
+            </select>
+          </label>
+        </div>
+        <div>
+          <label>
+            <span style="display: inline-block; width:5em;">纸质类型：</span>
+            <select v-model.number="newBook.paper_id">
+              <option value="0">请选择</option>
+              <option v-for="(value,index) in papersFilter" v-bind:value="value.id">{{value.name}}</option>
             </select>
           </label>
         </div>
@@ -798,7 +832,7 @@
         <div style="margin-top: 0.5em; clear: both; overflow: hidden;">
           <div v-for="(value,index) in fileImages" style="position: relative; float: left; border: solid 1px lightgray; margin-right: 2px; margin-bottom: 2px;">
             <img v-bind:src="value.url" height="100px" style="margin-right: 2px;" />
-            <svg width="16" height="16"  style="position: absolute; right: 0.5rem; bottom: 0.5rem;" v-if="value.status==1">
+            <svg width="16" height="16" style="position: absolute; right: 0.5rem; bottom: 0.5rem;" v-if="value.status==1">
               <circle cx="8" cy="8" r="8" fill="lightgreen"></circle>
             </svg>
           </div>
@@ -807,12 +841,17 @@
 
       <!--选择图片-->
       <div id="selectImagePanel" style="display: none; padding: 1rem;">
-        <div>
-          <label><input type="checkbox" v-model="config.closeWhenSelected" /> 选择图片后关闭窗口</label>
+        <div v-if="imageCount(selectImageType)>0">
+          <div>
+            <label><input type="checkbox" v-model="config.closeWhenSelected" /> 选择图片后关闭窗口</label>
+          </div>
+          <div style="margin-top: 0.5em;">
+            <img v-for="(value,index) in images" v-show="value.type==selectImageType" v-bind:src="value.url|url_format('s')"
+              height="100px" style="margin-right: 2px; cursor: pointer; border: solid 1px lightgray;" v-on:click="selectImage(value)" />
+          </div>
         </div>
-        <div style="margin-top: 0.5em;">
-          <img v-for="(value,index) in images" v-bind:src="value.url|url_format('s')" height="100px" style="margin-right: 2px; cursor: pointer; border: solid 1px lightgray;"
-            v-on:click="selectImage(value)" />
+        <div v-else>
+          <button class="button" type="button" v-on:click="showUploadPanel(selectImageType)">上传</button>
         </div>
       </div>
 
