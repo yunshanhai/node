@@ -10,11 +10,29 @@
       .png-test:hover {
         filter: drop-shadow(0px 0px 5px #fbbc46);
       }
+      
+      .png-test2 {
+        filter: drop-shadow(0px 0px 5px #fbbc46);
+      }
 
       .text-test {}
 
       .text-test:hover {
         filter: drop-shadow(5px 5px 5px #fbbc46);
+      }
+      
+      .demo1 {
+          width: 160px;
+          height: 160px;
+          overflow: hidden;
+          position: relative;
+      }
+      .demo1 img{
+        width: 160px;
+        position: absolute;
+        left: 160px;
+        filter: drop-shadow(-160px 0px 0px #fbbc46);
+        /* height: 160px; */
       }
     </style>
   </head>
@@ -31,6 +49,9 @@
       <input id="input" type="text" />
       <button @click="test()">啦啦啦</button>
       <img src="./images/55f4965a8c9af2dff150327d7d48ac8c.png" class="png-test" />
+      <div class="demo1">
+          <img src="./images/55f4965a8c9af2dff150327d7d48ac8c.png"/>
+      </div>
       <div id="source" style="width:100px; height: 100px; background: url(images/55f4965a8c9af2dff150327d7d48ac8c.png) no-repeat center; background-size: contain;" draggable="true">
 
       </div>

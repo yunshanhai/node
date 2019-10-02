@@ -46,7 +46,7 @@ const crafts = [{
     id: 1,
     name: '简装软皮', //给用户显示的名字
     craft: '软皮胶装', //工艺名字
-    is_crosspage: 0, //跨页不可选，单页可选
+    is_cross: 0, //跨页不可选，单页可选
     has_spine: 1, //有书脊
     spine_base_width: 12, //书脊最少宽度，低于此宽度不在书脊上显示内容
     spineWidths: null, //书脊宽度区间
@@ -62,7 +62,7 @@ const crafts = [{
     id: 2,
     name: '精装硬壳', //给用户显示的名字
     craft: '硬壳胶装', //工艺名字
-    is_crosspage: 0, //跨页不可选，单页可选
+    is_cross: 0, //跨页不可选，单页可选
     has_spine: 1, //有书脊
     spine_base_width: 12, //书脊最少宽度，低于此宽度不在书脊上显示内容
     spineWidths: [12, 24, 36], //书脊宽度区间，超过最大值则按实际计算
@@ -77,7 +77,7 @@ const crafts = [{
     id: 3,
     name: '精装对裱册', //给用户显示的名字
     craft: '硬壳对裱', //工艺名字
-    is_crosspage: 1, //跨页和单页都可选
+    is_cross: 1, //跨页和单页都可选
     has_spine: 1, //有书脊
     spine_base_width: 12, //书脊最少宽度，低于此宽度不在书脊上显示内容
     spineWidths: [12, 24, 36], //书脊宽度区间，超过最大值则按实际计算
@@ -89,24 +89,24 @@ const crafts = [{
   }
 ];
 
-const getCraftsByIsCrosspage = function(is_crosspage) {
+const getCraftsByIsCross = function(is_cross) {
   //   let tmp = null;
-  //   if (is_crosspage === 0) {
+  //   if (is_cross === 0) {
   //     tmp = crafts.filter(item => item.enable === 1);
   //   } else {
-  //     tmp = crafts.filter(item => item.enable === 1 && item.is_crosspage === 1);
+  //     tmp = crafts.filter(item => item.enable === 1 && item.is_cross === 1);
   //   }
   // 
   //   return tmp.sort((item1, item2) => {
   //     return item1.sort > item2.sort;
   //   });
 
-  return is_crosspage === 0 ? crafts : crafts.filter(item => item.is_crosspage === 1);
+  return is_cross === 0 ? crafts : crafts.filter(item => item.is_cross === 1);
 }
 
 module.exports = {
   //根据是否跨页获取可用的工艺
-  getCraftsByIsCrosspage,
+  getCraftsByIsCross,
   crafts,
   pagetypes: [{
     id: 0,

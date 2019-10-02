@@ -191,9 +191,9 @@
             <!--出血线-->
             <path v-if="currentPage!=null" v-bind:d="bleedPath" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
             <!--双页分割线-->
-            <path v-if="currentPage!=null && currentPageSize.is_crosspage===1" v-bind:d="midPath" style="stroke: darkgray; stroke-width:3; stroke-dasharray: 10;;"></path>
-            <!--            <path v-if="currentPageSize.is_crosspage===0" v-bind:d="midPathTop" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
-            <path v-if="currentPageSize.is_crosspage===0" v-bind:d="midPathBottom" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path> -->
+            <path v-if="currentPage!=null && currentPageSize.is_cross===1" v-bind:d="midPath" style="stroke: darkgray; stroke-width:3; stroke-dasharray: 10;;"></path>
+            <!--            <path v-if="currentPageSize.is_cross===0" v-bind:d="midPathTop" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
+            <path v-if="currentPageSize.is_cross===0" v-bind:d="midPathBottom" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path> -->
             <!--拖动组-->
             <g v-show="currentElementIndex>-1 && currentSelectedTools==='pointer'" v-bind:transform="dragObj.transform">
               <!--拖动层-->
@@ -642,7 +642,7 @@
               <!-- <rect v-bind:width="page.size.width_px" v-bind:height="page.size.height_px" fill="white"/> -->
               <!--图片背景-->
               <image v-bind:href="page.background.image|url_format('m')" v-bind:width="page.size.width_px"
-                v-bind:height="page.size.height_px" preserveAspectRatio="xMidYMid slice" />
+                v-bind:height="page.size.height_px" preserveAspectRatio="none" />
               <!--页面元素-->
               <g v-for="(element, index) in page.elements" v-show="element.display" v-bind:transform="elementTransform(element)">
                 <!--裁切路径-->

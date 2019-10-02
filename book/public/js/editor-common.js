@@ -259,7 +259,7 @@ function calcPageSize(page, book) {
   
   //统一加出血线宽度
   size.width += book.basebook.bleed * 2
-  size.height +=  + book.basebook.bleed * 2
+  size.height += book.basebook.bleed * 2
   
   //
   size.width_px = mm2px(size.width, config.dpi);

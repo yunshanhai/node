@@ -98,7 +98,7 @@ if(id!=null){
       book.paper = getPaperById(book.craft.papers, book.paper_id);
       
       if(book.pages.length>0){
-        //当前选中页索引
+        //当前选中页索引，考虑删除的页
         let index = -1;
         let lastIndex = book.pages.length - 1;
         while(index < lastIndex){
@@ -290,7 +290,7 @@ if(id!=null){
             bleed_right: width_px - bleed_px,
             bleed_bottom: height_px - bleed_px,
             bleed_left: bleed_px,
-            is_crosspage: this.book.basebook.is_crosspage,
+            is_cross: this.book.basebook.is_cross,
             viewbox_width: viewbox_width,
             viewbox_height: viewbox_height,
             viewbox_x: viewbox_x,
@@ -394,7 +394,7 @@ if(id!=null){
           }
           
           return this.crafts.filter(item=>{
-            return item.is_crosspage == basebook.is_crosspage;
+            return item.is_cross == basebook.is_cross;
           });
         },
         papersFilter: function(){

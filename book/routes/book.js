@@ -25,7 +25,7 @@ router.get('/:id', async function(req, res, next) {
     book.basebook = basebook;
     // book.basebook.spine_widths = bookConfig.spine_widths;
     // book.basebook.spine_base_width = bookConfig.spine_base_width;
-    book.crafts = bookConfig.getCraftsByIsCrosspage(basebook.double_page);
+    book.crafts = bookConfig.getCraftsByIsCross(basebook.double_page);
 
     book.pagetypes = bookConfig.pagetypes;
 
