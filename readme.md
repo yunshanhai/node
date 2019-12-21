@@ -11,7 +11,7 @@ cd book
 node install
 npm start
 
-在浏览器输入[http://localhost:3000/](http://localhost:3000/)
+在浏览器输入[http://localhost:3000/index.html?id=1](http://localhost:3000/)
 
 npm install mysql
 npm install sqlite3

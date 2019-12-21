@@ -349,7 +349,6 @@ let mounted = function() {
       element.width -= dx;
     });
   
-  //底部页面左右拖拽
   let dragPageContainerMove = false;
   d3.select('#dragPointL')
     .on('click',function() {
@@ -357,6 +356,7 @@ let mounted = function() {
     })
     .call(dragL);
   
+  //底部页面左右拖拽
   let pagesContainerLeftLimit = 0
   let dragPagesContainer = d3.behavior.drag()
     .on("dragstart", function(){

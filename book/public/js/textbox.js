@@ -26,27 +26,6 @@ function TextBox(x, y, width, height, config){
   self.drawHeight = 0;
   
   console.log(self.fontSize)
-  // this.content = null;
-  // this.textTestId = obj.textTestId;
-  // this.svgId = obj.svgId;
-  // this.fontSize = obj.fontSize;
-  // this.fontFamily = obj.fontFamily;
-  // this.fontWeight = obj.fontWeight;
-  // this.lineHeight = obj.lineHeight,
-  // this.color = obj.color;
-  // this.textIndent = obj.textIndent;
-  // this.align = obj.align;
-  // this.letterSpacing = obj.letterSpacing;
-  // this.wordSpacing = obj.wordSpacing;
-  // let _content = null;
-  // 
-  // this.setContent = function(content){
-  //   _content = content;
-  // }
-  // 
-  // this.getContent = function(){
-  //   return _content;
-  // }
   
   if(self.width < self.fontSize){
     throw 'width 必须大于 fontSize';

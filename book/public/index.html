@@ -192,7 +192,7 @@
             <path v-if="currentPage!=null" v-bind:d="bleedPath" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
             <!--双页分割线-->
             <path v-if="currentPage!=null && currentPageSize.is_cross===1" v-bind:d="midPath" style="stroke: darkgray; stroke-width:3; stroke-dasharray: 10;;"></path>
-            <!--            <path v-if="currentPageSize.is_cross===0" v-bind:d="midPathTop" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
+            <!-- <path v-if="currentPageSize.is_cross===0" v-bind:d="midPathTop" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path>
             <path v-if="currentPageSize.is_cross===0" v-bind:d="midPathBottom" style="stroke: red; stroke-width:3; stroke-dasharray: 10; fill: none;"></path> -->
             <!--拖动组-->
             <g v-show="currentElementIndex>-1 && currentSelectedTools==='pointer'" v-bind:transform="dragObj.transform">
@@ -226,7 +226,7 @@
             <g v-show="currentSelectedTools!=='pointer'">
               <rect id="selectPanel" v-bind:x="currentPageSize.viewbox_x" y="0" v-bind:width="currentPageSize.viewbox_width"
                 v-bind:height="currentPageSize.viewbox_height" fill="red" fill-opacity="0" v-bind:class="[currentSelectedTools=='text'?'text':'crosshair']" />
-              <rect id="select" v-bind:x="selectObj.x" v-bind:y="selectObj.y" v-bind:width="selectObj.width"
+              <rect v-bind:x="selectObj.x" v-bind:y="selectObj.y" v-bind:width="selectObj.width"
                 v-bind:height="selectObj.height" stroke="#666" stroke-width="3" stroke-dasharray="18,12" fill="rgb(22,145,232)"
                 fill-opacity="0.1" v-show="currentSelectedTools==='select'" />
             </g>
